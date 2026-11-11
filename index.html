@@ -463,6 +463,9 @@ a.btn{text-decoration:none;color:inherit}
 .login .or::before,.login .or::after{content:"";flex:1;height:1px;background:var(--line)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
+.brand-ic{width:40px;height:40px;flex:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))}
+.brand-ic svg{width:100%;height:100%;display:block}
+
 .app{padding-top:max(14px,env(safe-area-inset-top))}
 @media (max-width:760px){.dock{bottom:max(10px,env(safe-area-inset-bottom))}}
 </style>
@@ -473,7 +476,7 @@ a.btn{text-decoration:none;color:inherit}
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Today">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
 <body data-mode="dark">
@@ -518,6 +521,7 @@ const uid = () => Math.random().toString(36).slice(2,9);
 const initials = n => n.replace(/\(.*?\)/g,'').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const weekIdx = () => (new Date().getDay()+6)%7; // 0 = segunda
 
+const SYMBOL = '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#121a23"/><rect x="24" y="24" width="24" height="52" rx="7" fill="#2b8f95"/><rect x="52" y="24" width="24" height="24" rx="7" fill="#e0a14a"/><rect x="52" y="52" width="24" height="24" rx="7" fill="#e8ecf2"/></svg>';
 /* ================= IAs e módulos ================= */
 const AIS = [
   {id:'claude',  name:'Claude',  by:'Anthropic', c1:'#e0a07a', c2:'#b9643f'},
@@ -1009,7 +1013,7 @@ function renderTop(){
   const d = new Date();
   $('#top').innerHTML = `
     <div class="who">
-      <div class="avatar" aria-hidden="true">G</div>
+      <div class="brand-ic">${SYMBOL}</div>
       <div><b>Today</b><small id="topDate">${DOWF[d.getDay()]}, ${d.getDate()} de ${MESF[d.getMonth()]}</small><small class="sync" id="syncTag"></small></div>
     </div>
     <form class="cmd" id="cmdForm" autocomplete="off">
@@ -2041,7 +2045,7 @@ function showLogin(){
   let el = $('#login');
   if(!el){ el = document.createElement('div'); el.id = 'login'; el.className = 'login-wrap'; document.body.append(el); }
   el.innerHTML = `<form class="login glass" id="loginForm" autocomplete="on">
-    <div class="row" style="gap:12px;margin-bottom:18px"><div class="avatar" style="width:48px;height:48px;font-size:20px">T</div><div><h1>Today</h1><p class="muted small">Seu painel pessoal no PC e no celular</p></div></div>
+    <div class="row" style="gap:12px;margin-bottom:18px"><div class="brand-ic" style="width:52px;height:52px">${SYMBOL}</div><div><h1>Today</h1><p class="muted small">Seu painel pessoal no PC e no celular</p></div></div>
     <div class="seg" style="width:100%;margin-bottom:16px"><button type="button" class="${loginMode==='in'?'on':''}" data-act="login-mode" data-m="in" style="flex:1">Entrar</button><button type="button" class="${loginMode==='up'?'on':''}" data-act="login-mode" data-m="up" style="flex:1">Criar conta</button></div>
     <div class="field"><label for="lgEmail">E-mail</label><input id="lgEmail" type="email" autocomplete="email" required placeholder="voce@email.com"/></div>
     <div class="field"><label for="lgPass">Senha</label><input id="lgPass" type="password" autocomplete="${loginMode==='in'?'current-password':'new-password'}" required minlength="6" placeholder="Pelo menos 6 caracteres"/></div>
