@@ -1,6 +1,6 @@
 /* Today: service worker. Guarda o app para abrir rápido e funcionar sem internet.
    Dados do Supabase nunca passam pelo cache. Mude VERSION a cada atualização. */
-const VERSION = 'today-v3';
+const VERSION = 'today-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

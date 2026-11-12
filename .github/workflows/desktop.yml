@@ -1,0 +1,41 @@
+# Gera o instalador do Today para Windows e publica em Releases.
+name: Today para Windows
+
+on:
+  push:
+    branches: [main]
+    paths: ['desktop/**', '.github/workflows/desktop.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Ler a versão
+        id: v
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-v${{ steps.v.outputs.version }}
+          name: Today para Windows ${{ steps.v.outputs.version }}
+          body: |
+            Baixe **Today-Setup-${{ steps.v.outputs.version }}.exe** abaixo e instale.
+            Precisa do Windows 11 para o efeito de vidro (acrílico).
+            Se o Windows mostrar "O Windows protegeu o computador", clique em **Mais informações** e depois em **Executar assim mesmo**.
+          files: desktop/dist/*.exe
+          make_latest: true

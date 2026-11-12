@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Today · sem conexão</title>
+<style>
+  html, body { height: 100%; margin: 0; background: transparent; color: #eef1f5; font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif; }
+  body { display: grid; place-items: center; -webkit-app-region: drag; }
+  .card { text-align: center; padding: 32px 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,.18); background: rgba(12,16,22,.12); max-width: 420px; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 8px; }
+  p { margin: 0 0 20px; color: #c7ced8; line-height: 1.5; }
+  button { -webkit-app-region: no-drag; font: inherit; font-weight: 600; padding: 10px 22px; border-radius: 999px; border: 0; background: #eef1f5; color: #10141a; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Sem conexão com a internet</h1>
+    <p>O Today precisa de internet na primeira vez que abre. Depois disso ele funciona offline.</p>
+    <button onclick="window.todayDesktop && window.todayDesktop.retry()">Tentar de novo</button>
+  </div>
+</body>
+</html>

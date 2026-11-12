@@ -469,6 +469,18 @@ a.btn{text-decoration:none;color:inherit}
 .modal.glass,.palette.glass,.pop.glass,.toast.glass,.login{backdrop-filter:blur(36px) saturate(190%);-webkit-backdrop-filter:blur(36px) saturate(190%)}
 .page-head h1,.clock .time,.kpi .val{text-shadow:0 1px 18px rgba(0,0,0,.12)}
 
+/* ---------- programa de PC: vidro real sobre a área de trabalho ---------- */
+html.desktop,body.desktop{background:transparent!important}
+body.desktop .bg{display:none}
+body.desktop[data-mode="dark"]{--ink-3:#a7b0bc;--ink-2:#c7ced8;--shell:rgba(12,16,22,.07);--card:rgba(255,255,255,.035);--card-hi:rgba(255,255,255,.085);--edge:rgba(255,255,255,.18);--line:rgba(255,255,255,.1);--soft:rgba(255,255,255,.08);--solid:rgba(20,25,33,.45);--shadow:0 18px 50px -28px rgba(0,0,0,.6)}
+body.desktop[data-mode="light"]{--shell:rgba(255,255,255,.08);--card:rgba(255,255,255,.14);--card-hi:rgba(255,255,255,.34);--edge:rgba(255,255,255,.55);--solid:rgba(246,248,250,.5);--shadow:0 18px 50px -28px rgba(30,40,60,.3)}
+body.desktop .glass{backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%)}
+body.desktop .topbar{-webkit-app-region:drag;padding-right:150px}
+body.desktop .topbar button,body.desktop .topbar input,body.desktop .topbar form,body.desktop .topbar a,body.desktop .topbar label{-webkit-app-region:no-drag}
+body.desktop [data-act="bg-pop"]{display:none}
+body.desktop .page-head h1,body.desktop .clock .time,body.desktop .kpi .val{text-shadow:0 1px 14px rgba(0,0,0,.25)}
+body.desktop[data-mode="light"] .page-head h1,body.desktop[data-mode="light"] .clock .time{text-shadow:0 1px 14px rgba(255,255,255,.5)}
+
 .app{padding-top:max(14px,env(safe-area-inset-top))}
 @media (max-width:760px){.dock{bottom:max(10px,env(safe-area-inset-bottom))}}
 </style>
@@ -524,6 +536,7 @@ const uid = () => Math.random().toString(36).slice(2,9);
 const initials = n => n.replace(/\(.*?\)/g,'').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const weekIdx = () => (new Date().getDay()+6)%7; // 0 = segunda
 
+const DESKTOP = /TodayDesktop/.test(navigator.userAgent);
 const SYMBOL = '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#121a23"/><rect x="24" y="24" width="24" height="52" rx="7" fill="#2b8f95"/><rect x="52" y="24" width="24" height="24" rx="7" fill="#e0a14a"/><rect x="52" y="52" width="24" height="24" rx="7" fill="#e8ecf2"/></svg>';
 /* ================= IAs e módulos ================= */
 const AIS = [
@@ -1480,7 +1493,7 @@ function pAjustes(){
   <div class="cols c2">
     <section class="card"><div class="card-h"><h3>Aparência</h3></div>
       <div class="row between" style="margin-bottom:14px"><span class="small" style="font-weight:600">Tema</span><div class="seg"><button class="${S.mode==='light'?'on':''}" data-act="set-mode" data-m="light">${'Claro'}</button><button class="${S.mode==='dark'?'on':''}" data-act="set-mode" data-m="dark">Escuro</button></div></div>
-      <div class="small" style="font-weight:600;margin-bottom:8px">Fundo</div>${bgSwatches()}</section>
+      <div class="small" style="font-weight:600;margin-bottom:8px">Fundo</div>${DESKTOP?'<p class="small muted">No programa de PC o fundo é a sua própria área de trabalho, vista através do vidro.</p>':bgSwatches()}</section>
     <section class="card"><div class="card-h"><h3>IAs</h3><span class="small muted">Precisam de chave de API</span></div>${AIS.map(a=>`<div class="row" style="padding:7px 0">${aiDot(a,1).replace('ai-dot"','ai-dot" ').replace('style="','style="width:30px;height:30px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;')}<div class="grow"><b style="font-size:13px">${a.name}</b><div class="small muted">${a.by}</div></div>${S.ai===a.id?'<span class="pill ok"><span class="d"></span>Em uso</span>':`<button class="btn sm" data-act="set-ai" data-id="${a.id}">Usar</button>`}</div>`).join('')}</section>
     <section class="card"><div class="card-h"><h3>Conexões</h3><span class="pill">Próxima fase</span></div>${integ.map(([n,i,w])=>`<div class="row" style="padding:7px 0"><div class="ico">${ic(i)}</div><div class="grow"><b style="font-size:13px">${n}</b><div class="small muted">${w}</div></div><span class="pill">Não conectado</span></div>`).join('')}</section>
     <section class="card"><div class="card-h"><h3>Dados e sincronização</h3><span class="pill ${syncState==='ok'?'ok':syncState==='error'||syncState==='slow'?'crit':''}">${{local:'Só neste aparelho',loading:'Conectando',saving:'Salvando',ok:'Sincronizado',slow:'Sem conexão',error:'Erro'}[syncState]}</span></div>
@@ -1497,6 +1510,7 @@ const PAGES = {inicio:pInicio, ia:pIa, agenda:pAgenda, mensagens:pMensagens, pag
 let lastPage = null;
 function render(keepScroll=true){
   document.body.dataset.mode = S.mode;
+  if(DESKTOP && window.todayDesktop){ try{ window.todayDesktop.setTheme(S.mode); }catch(e){} }
   const sc = $('#scroll'), y = sc.scrollTop;
   renderDock(); renderSubs();
   sc.innerHTML = (PAGES[S.page]||pInicio)();
@@ -2098,6 +2112,7 @@ function initPwa(){
 }
 
 /* ================= início ================= */
+if(DESKTOP){ document.documentElement.classList.add('desktop'); document.body.classList.add('desktop'); }
 document.body.dataset.mode = S.mode;
 const h0 = location.hash.slice(1); if(h0 && PAGES[h0]) S.page = h0;
 renderBg(); renderTop(); render(false);
