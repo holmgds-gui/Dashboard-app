@@ -24,3 +24,9 @@ A pasta `desktop/` tem o programa de PC (Electron). A janela usa o efeito acríl
 - **Instalar:** baixe `Today-Setup-x.y.z.exe` em [Releases](https://github.com/holmgds-gui/Dashboard-app/releases). O GitHub gera o instalador sozinho a cada mudança em `desktop/` (veja a aba Actions).
 - **Rodar sem instalar (com Node.js):** `cd desktop && npm install && npm start`.
 - O instalador não é assinado: o Windows pode mostrar "O Windows protegeu o computador". Clique em **Mais informações** e depois em **Executar assim mesmo**.
+
+### Barra flutuante e empresas
+
+- **Minimizar vira barra:** ao minimizar a janela do Today no Windows, ela vira uma barra de vidro pequena, sempre por cima. Clique num ícone para abrir o Today naquela página. Arraste pela alça para mudar de lugar (a posição fica salva). Liga/desliga em Ajustes > Barra de atalhos.
+- **Barra editável:** ordem, ícones, itens visíveis, formato (vertical ou horizontal) e posição (esquerda, direita, topo, embaixo). Clique com o botão direito na barra para editar.
+- **Empresas:** um login só, vários espaços com dados separados. Troque pela barra, pelo topo ou em Ajustes > Empresas.
