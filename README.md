@@ -28,5 +28,7 @@ A pasta `desktop/` tem o programa de PC (Electron). A janela usa o efeito acríl
 ### Barra flutuante e empresas
 
 - **Minimizar vira barra:** ao minimizar a janela do Today no Windows, ela vira uma barra de vidro pequena, sempre por cima. Clique num ícone para abrir o Today naquela página. Arraste pela alça para mudar de lugar (a posição fica salva). Liga/desliga em Ajustes > Barra de atalhos.
+- **Só o botão do Today:** na barra flutuante, o botão de menos minimiza a barra para virar só a logo. Clique na logo para abrir a barra de novo; arraste para mudar de lugar.
+- **Botões da janela:** minimizar, maximizar e fechar ficam numa faixa própria no topo, sem cobrir o desenho do app.
 - **Barra editável:** ordem, ícones, itens visíveis, formato (vertical ou horizontal) e posição (esquerda, direita, topo, embaixo). Clique com o botão direito na barra para editar.
 - **Empresas:** um login só, vários espaços com dados separados. Troque pela barra, pelo topo ou em Ajustes > Empresas.

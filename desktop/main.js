@@ -6,7 +6,6 @@ const path = require('path');
 const fs = require('fs');
 
 const APP_URL = 'https://holmgds-gui.github.io/Dashboard-app/';
-const OVERLAY = { dark: '#eef1f5', light: '#141a22' };
 
 let win = null;
 let bar = null;            // janela da barra flutuante (aparece quando o Today é minimizado)
@@ -91,8 +90,8 @@ function createWindow() {
     icon: path.join(__dirname, 'build', 'icon.png'),
     backgroundColor: '#00000000',
     backgroundMaterial: 'acrylic',
+    // Sem botões nativos por cima do desenho: o app desenha os próprios (minimizar, maximizar, fechar)
     titleBarStyle: 'hidden',
-    titleBarOverlay: { color: '#00000000', symbolColor: OVERLAY.dark, height: 44 },
     autoHideMenuBar: true,
     show: false,
     webPreferences: {
@@ -134,6 +133,11 @@ function createWindow() {
   win.on('close', () => { quitting = true; });
   win.on('closed', () => { if (bar && !bar.isDestroyed()) bar.destroy(); win = null; app.quit(); });
 
+  const sendState = () => { if (win && !win.isDestroyed()) win.webContents.send('today:win-state', win.isMaximized()); };
+  win.on('maximize', sendState);
+  win.on('unmaximize', sendState);
+  win.webContents.on('did-finish-load', sendState);
+
   win.once('ready-to-show', () => win.show());
   win.loadURL(APP_URL);
 }
@@ -142,9 +146,35 @@ function createWindow() {
 ipcMain.on('today:set-theme', (_e, mode) => {
   if (!win || (mode !== 'dark' && mode !== 'light')) return;
   nativeTheme.themeSource = mode;
-  try { win.setTitleBarOverlay({ color: '#00000000', symbolColor: OVERLAY[mode], height: 44 }); } catch (e) {}
 });
 ipcMain.on('today:retry', () => { if (win) win.loadURL(APP_URL); });
+
+// Botões da janela desenhados pelo app
+ipcMain.on('today:win-ctl', (e, cmd) => {
+  if (!win || win.isDestroyed() || e.sender !== win.webContents) return;
+  if (cmd === 'min') win.minimize();
+  else if (cmd === 'max') { if (win.isMaximized()) win.unmaximize(); else win.maximize(); }
+  else if (cmd === 'close') win.close();
+});
+
+// Arrastar o botão do Today (barra minimizada)
+let dragStart = null;
+ipcMain.on('today:bar-drag-start', (e) => {
+  if (!bar || bar.isDestroyed() || e.sender !== bar.webContents) return;
+  const [x, y] = bar.getPosition(); dragStart = { x, y };
+});
+ipcMain.on('today:bar-drag-move', (e, dx, dy) => {
+  if (!dragStart || !bar || bar.isDestroyed() || e.sender !== bar.webContents) return;
+  bar.setBounds({ x: Math.round(dragStart.x + (+dx || 0)), y: Math.round(dragStart.y + (+dy || 0)), width: barSize.w, height: barSize.h });
+});
+ipcMain.on('today:bar-drag-end', (e) => {
+  if (!bar || bar.isDestroyed() || e.sender !== bar.webContents) return;
+  dragStart = null;
+  const [x, y] = bar.getPosition();
+  const p = clampToScreen(x, y, barSize.w, barSize.h);
+  bar.setBounds({ x: p.x, y: p.y, width: barSize.w, height: barSize.h });
+  savePos();
+});
 
 // O app liga/desliga a barra flutuante (Ajustes > Barra de atalhos)
 ipcMain.on('today:bar-config', (e, enabled) => {
