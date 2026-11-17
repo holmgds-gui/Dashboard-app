@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('todayDesktop', {
   winCtl: (cmd) => ipcRenderer.send('today:win-ctl', String(cmd)),
   onWinState: (cb) => ipcRenderer.on('today:win-state', (_e, max) => { try { cb(!!max); } catch (e) {} }),
   // barra flutuante (aparece ao minimizar)
+  barHit: (hit) => ipcRenderer.send('today:bar-hit', !!hit),
   barDragStart: () => ipcRenderer.send('today:bar-drag-start'),
   barDragMove: (dx, dy) => ipcRenderer.send('today:bar-drag-move', dx, dy),
   barDragEnd: () => ipcRenderer.send('today:bar-drag-end'),

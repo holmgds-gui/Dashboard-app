@@ -1,7 +1,7 @@
 // Today para Windows: abre o app em uma janela de vidro (acrílico do Windows 11),
 // mostrando a área de trabalho desfocada atrás. O conteúdo vem do site no GitHub Pages,
 // então login, sincronização e atualizações são os mesmos do app web.
-const { app, BrowserWindow, ipcMain, nativeTheme, shell, Menu, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, nativeTheme, shell, Menu, screen, Tray, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -13,6 +13,7 @@ let barEnabled = false;    // o app avisa se o usuário quer a barra flutuante
 let barSide = 'left';
 let barSize = { w: 72, h: 360 };
 let quitting = false;
+let tray = null;
 
 // ---- barra flutuante ----
 const posFile = () => path.join(app.getPath('userData'), 'bar-position.json');
@@ -55,6 +56,7 @@ function createBar() {
     },
   });
   bar.setAlwaysOnTop(true, 'floating');
+  bar.setIgnoreMouseEvents(true, { forward: true });   // a área transparente em volta não bloqueia cliques
   bar.webContents.setUserAgent(bar.webContents.getUserAgent() + ' TodayDesktop/' + app.getVersion());
   bar.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   bar.webContents.on('will-navigate', (e) => e.preventDefault());
@@ -75,8 +77,30 @@ function restoreMain(page) {
   hideBar();
   if (!win || win.isDestroyed()) return;
   if (win.isMinimized()) win.restore();
-  win.show(); win.focus();
-  if (page) win.webContents.send('today:goto', page);
+  win.show();
+  // traz para a frente mesmo com outras janelas abertas (o Windows às vezes deixa atrás)
+  win.setAlwaysOnTop(true);
+  win.focus();
+  win.setAlwaysOnTop(false);
+  app.focus({ steal: true });
+  if (page) {
+    if (win.webContents.isLoading()) win.webContents.once('did-finish-load', () => win.webContents.send('today:goto', page));
+    else win.webContents.send('today:goto', page);
+  }
+}
+// Ícone na bandeja: caminho de volta garantido, mesmo se a barra flutuante falhar
+function createTray() {
+  try {
+    const img = nativeImage.createFromPath(path.join(__dirname, 'build', 'icon.png')).resize({ width: 16, height: 16 });
+    tray = new Tray(img);
+    tray.setToolTip('Today');
+    tray.setContextMenu(Menu.buildFromTemplate([
+      { label: 'Abrir o Today', click: () => restoreMain() },
+      { type: 'separator' },
+      { label: 'Sair', click: () => { quitting = true; app.quit(); } },
+    ]));
+    tray.on('click', () => restoreMain());
+  } catch (e) { tray = null; }
 }
 
 function createWindow() {
@@ -127,6 +151,8 @@ function createWindow() {
     e.preventDefault();
     win.hide();
     showBar();
+    // se a barra não aparecer em alguns segundos, o Today volta sozinho (nunca fica "sumido")
+    setTimeout(() => { if (win && !win.isDestroyed() && !win.isVisible() && !(bar && !bar.isDestroyed() && bar.isVisible())) restoreMain(); }, 3500);
   });
   win.on('restore', hideBar);
   win.on('show', () => { if (!win.isMinimized()) hideBar(); });
@@ -155,6 +181,12 @@ ipcMain.on('today:win-ctl', (e, cmd) => {
   if (cmd === 'min') win.minimize();
   else if (cmd === 'max') { if (win.isMaximized()) win.unmaximize(); else win.maximize(); }
   else if (cmd === 'close') win.close();
+});
+
+// Só captura o mouse quando ele está sobre a barra/logo; a margem transparente deixa o clique passar
+ipcMain.on('today:bar-hit', (e, hit) => {
+  if (!bar || bar.isDestroyed() || e.sender !== bar.webContents) return;
+  if (hit) bar.setIgnoreMouseEvents(false); else bar.setIgnoreMouseEvents(true, { forward: true });
 });
 
 // Arrastar o botão do Today (barra minimizada)
@@ -207,6 +239,6 @@ if (!single) app.quit();
 else {
   app.on('second-instance', () => restoreMain());
   app.on('before-quit', () => { quitting = true; });
-  app.whenReady().then(createWindow);
+  app.whenReady().then(() => { createWindow(); createTray(); });
   app.on('window-all-closed', () => app.quit());
 }

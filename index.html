@@ -571,17 +571,18 @@ body.desktop[data-mode="light"]{--shell:rgba(255,255,255,.08);--card:rgba(255,25
 /* a área de trabalho já é desfocada pelo Windows (acrílico); desfocar de novo cada cartão só pesa */
 body.desktop .glass{backdrop-filter:none;-webkit-backdrop-filter:none}
 body.desktop .modal.glass,body.desktop .palette.glass,body.desktop .pop.glass,body.desktop .toast.glass,body.desktop .login{backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%)}
-body.desktop .topbar{-webkit-app-region:drag}
 /* faixa própria da janela: os botões não ficam mais por cima do desenho */
 .winbar{display:none}
-body.desktop:not(.barwin) .winbar{display:flex;position:fixed;top:0;left:0;right:0;height:44px;z-index:400;justify-content:flex-end;align-items:flex-start;-webkit-app-region:drag}
+body.desktop:not(.barwin) .winbar{display:flex;position:fixed;top:5px;left:6px;right:6px;height:40px;z-index:400;justify-content:flex-end;align-items:flex-start;-webkit-app-region:drag}
 body.desktop:not(.barwin) .app{padding-top:48px}
-.wc{display:flex;gap:2px;margin:7px 12px 0 0;padding:3px;border-radius:999px;background:var(--card);border:1px solid var(--edge);-webkit-app-region:no-drag}
+.wc{display:flex;gap:2px;margin:2px 6px 0 0;padding:3px;border-radius:999px;background:var(--card);border:1px solid var(--edge);-webkit-app-region:no-drag}
 .wc button{width:40px;height:26px;border-radius:999px;display:grid;place-items:center;color:var(--ink-2);transition:background .15s,color .15s}
 .wc button .i{width:15px;height:15px}
 .wc button:hover{background:var(--soft);color:var(--ink)}
 .wc button.close:hover{background:#e5484d;color:#fff}
-body.desktop .topbar button,body.desktop .topbar input,body.desktop .topbar form,body.desktop .topbar a,body.desktop .topbar label{-webkit-app-region:no-drag}
+/* com janela/menu aberto por cima, a faixa não pode engolir cliques */
+body.desktop:has(.scrim) .winbar,body.desktop:has(.pop) .winbar{-webkit-app-region:no-drag;pointer-events:none}
+body.desktop:has(.scrim) .wc,body.desktop:has(.pop) .wc{pointer-events:auto}
 body.desktop [data-act="bg-pop"]{display:none}
 body.desktop .page-head h1,body.desktop .clock .time,body.desktop .kpi .val{text-shadow:0 1px 14px rgba(0,0,0,.25)}
 body.desktop[data-mode="light"] .page-head h1,body.desktop[data-mode="light"] .clock .time{text-shadow:0 1px 14px rgba(255,255,255,.5)}
@@ -2417,6 +2418,12 @@ if(BARWIN){
     if(f.dataset.fb==='toggle'){ try{ localStorage.setItem(FKEY, floatOpen()?'0':'1'); }catch(_){} renderFloat(); }
     if(f.dataset.fb==='mini') setFloatMini(true);
   });
+  /* a margem transparente da janela não pode bloquear cliques: só captura sobre a barra/logo */
+  let over = null;
+  const hit = v => { if(v===over) return; over = v; try{ (window.todayDesktop||{}).barHit(v); }catch(_){} };
+  document.addEventListener('mousemove', e => hit(!!(e.target.closest && e.target.closest('.fb-pill,.fb-mini'))));
+  document.documentElement.addEventListener('mouseleave', () => hit(false));
+  window.addEventListener('blur', () => { if(!fd) hit(false); });
   /* botão do Today (barra minimizada): clique expande, arrastar move a janela */
   let fd = null;
   const T = () => window.todayDesktop || {};
