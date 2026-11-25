@@ -10,3 +10,4 @@ O programa procura versão nova ao abrir e a cada 4 horas, baixa em segundo plan
 ## 1.6.0
 - **Mini player do Spotify** (Música > Controle): play/pausa, próxima, volume, busca e escolha de dispositivo; precisa de Spotify Premium e de uma vez "Conectar ao Spotify".
 - **A janela acompanha o tamanho**: ao diminuir o Today, o conteúdo (botões da janela, barra de abas, apps embutidos) se encaixa no tamanho real da janela em vez de ficar cortado.
+- Janela: o Today se ajusta ao tamanho real mesmo com o vidro do Windows.
