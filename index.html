@@ -727,6 +727,7 @@ function defaults(){
   );
   return {
     mode:'dark', bg:{type:'grad',preset:'aurora'}, ai:'claude', page:'inicio', sub:{}, warn10:true,
+    biz:'Fire Taste',
     bar:defaultBar(), wsList:[{id:'w1',name:'Pessoal',color:WS_COLORS[0]}], ws:'w1', wsData:{},
     events: ev,
     tasks: [
@@ -1001,8 +1002,10 @@ const SCHED = {
 const PRODUCTS = [['Molho Habanero',38],['Geleia de pimenta',24],['Molho Jalapeño verde',19],['Ketchup artesanal',15],['Pimenta em conserva',12]];
 const LANES_T = [['todo','A fazer','O que vem pela frente'],['doing','Fazendo','Em andamento'],['done','Feito','Concluído']];
 const LANES_O = [['pack','A embalar','Pago, esperando embalagem'],['packed','Embalado','Etiqueta impressa'],['ship','Enviado','Com a transportadora'],['done','Entregue','Chegou ao cliente']];
-const TAGTINT = {'UFPR':'#8fb3d9','Colégio':'#9cc3a5','Fire Taste':'#e08a5f','Pessoal':'#a7aeb8','Prova':'#d79a8f','Projetos':'#aaa3d6'};
-const CATC = {'Alimentação':'#e0a15a','Fire Taste':'#d9785a','Estudos':'#7aa7c7','Transporte':'#8fbf9a','Lazer':'#b79ad1','Assinaturas':'#c9a37a','Casa':'#9aa6b5','Saúde':'#7fc2b8','Trabalho':'#7aa7c7'};
+const bizColor = o => new Proxy(o, {get:(t,k) => (k===S.biz && !(k in t)) ? t['Fire Taste'] : t[k]});
+const TAGTINT = bizColor({'UFPR':'#8fb3d9','Colégio':'#9cc3a5','Fire Taste':'#e08a5f','Pessoal':'#a7aeb8','Prova':'#d79a8f','Projetos':'#aaa3d6'});
+const catList = () => Object.keys(CATC).map(k => k==='Fire Taste' ? S.biz : k);
+const CATC = bizColor({'Alimentação':'#e0a15a','Fire Taste':'#d9785a','Estudos':'#7aa7c7','Transporte':'#8fbf9a','Lazer':'#b79ad1','Assinaturas':'#c9a37a','Casa':'#9aa6b5','Saúde':'#7fc2b8','Trabalho':'#7aa7c7'});
 
 /* ================= fundo ================= */
 const GRADS = {
@@ -1142,7 +1145,7 @@ function delTx(id){
   const w = walletById(t.wallet); if(w) w.balance = Math.round((w.balance - (t.kind==='in'?t.amount:-t.amount))*100)/100;
   S.tx = S.tx.filter(x=>x.id!==id);
 }
-const fireSold = () => monthTx().filter(t=>t.kind==='in' && t.cat==='Fire Taste').reduce((a,t)=>a+t.amount,0);
+const fireSold = () => monthTx().filter(t=>t.kind==='in' && t.cat===S.biz).reduce((a,t)=>a+t.amount,0);
 function salesPace(){
   const T = today0(), last = new Date(T.getFullYear(), T.getMonth()+1, 0).getDate(), left = last - T.getDate() + 1;
   const sold = fireSold(), missing = Math.max(0, S.salesGoal - sold);
@@ -1293,7 +1296,7 @@ function pInicio(){
     </section>
 
     <section class="card lift">
-      <div class="card-h"><div><h3>Fire Taste</h3><div class="sub">${pack.length} pedidos para embalar</div></div><button class="link" data-go="negocios">${ic('arrow-up-right')}</button></div>
+      <div class="card-h"><div><h3>${esc(S.biz)}</h3><div class="sub">${pack.length} pedidos para embalar</div></div><button class="link" data-go="negocios">${ic('arrow-up-right')}</button></div>
       ${(()=>{ const sp = salesPace(); return `<div class="row" style="gap:14px">${ring(sp.pct,78,7,Math.round(sp.pct*100)+'%')}<div class="grow"><div class="small muted">Meta do mês</div><b class="num">${brl(sp.sold)}</b><div class="small muted num">de ${brl(S.salesGoal)}</div></div></div><div class="small muted" style="margin-top:10px">${sp.missing?`Faltam ${brl(sp.missing)}: ${brl(sp.perDay)} por dia`:'Meta batida. Boa!'}</div>`; })()}
     </section>
 
@@ -1321,7 +1324,7 @@ function pIa(){
       <div class="chat-h">${aiDot(a,1)}<div class="grow"><b>${a.name}</b><div class="small muted">${a.by}</div></div><button class="btn sm ghost" data-act="ai-clear">${ic('trash-2')}Limpar conversa</button></div>
       <div class="msgs" id="aiMsgs">${th.length? th.map(m=>`<div class="bub ${m.me?'me':''}">${esc(m.t)}</div>`).join('') : `<div class="empty">Comece uma conversa com o ${a.name}.</div>`}</div>
       <div class="composer">
-        <div class="chips">${['Resuma meu dia','Monte um cronograma de estudo','Ideias de post para a Fire Taste','Escreva uma resposta para a Marina'].map(t=>`<button class="chipb" data-act="ai-chip" data-t="${esc(t)}">${t}</button>`).join('')}</div>
+        <div class="chips">${['Resuma meu dia','Monte um cronograma de estudo',`Ideias de post para ${S.biz}`,'Escreva uma resposta para um cliente'].map(t=>`<button class="chipb" data-act="ai-chip" data-t="${esc(t)}">${t}</button>`).join('')}</div>
         <form id="aiForm" autocomplete="off"><label for="aiIn" style="position:absolute;left:-9999px">Mensagem</label><input id="aiIn" placeholder="Mensagem para o ${a.name}" /><button class="send-btn" aria-label="Enviar">${ic('send')}</button></form>
       </div>
     </div>
@@ -1585,7 +1588,7 @@ function pNegocios(){
     const today = S.orders.filter(o=>o.when.startsWith('há') && !o.when.includes('dias')), sumT = today.reduce((a,o)=>a+o.total,0);
     const wk = [142.5, 210.8, 96.4, 188.0, 260.4, 189.0, Math.round(sumT*10)/10];
     const lab = []; for(let i=6;i>=0;i--) lab.push(DOW[addDays(today0(),-i).getDay()]);
-    return head('Fire Taste', 'Vendas, produtos e estoque (dados de exemplo).', `<button class="btn primary" data-act="new-order">${ic('plus')}Novo pedido</button>`) + `
+    return head(S.biz, 'Vendas, produtos e estoque.', `<button class="btn primary" data-act="new-order">${ic('plus')}Novo pedido</button>`) + `
     <div class="cols c4" style="margin-bottom:14px">${kpi('Vendas hoje',brl(sumT),'banknote',`${today.length} pedidos`)}${kpi('Últimos 7 dias',brl(wk.reduce((a,b)=>a+b,0)),'trending-up','vs. semana anterior','<span class="delta up">+12%</span>')}${kpi('A embalar',String(S.orders.filter(o=>o.lane==='pack').length),'package','pedidos pagos')}${kpi('Ticket médio',brl(S.orders.length?S.orders.reduce((a,o)=>a+o.total,0)/S.orders.length:0),'receipt','por pedido')}</div>
     ${(()=>{ const sp = salesPace(); return `<section class="card" style="margin-bottom:14px"><div class="row" style="gap:22px;flex-wrap:wrap">${ring(sp.pct,120,10,Math.round(sp.pct*100)+'%','da meta')}<div class="grow" style="min-width:200px"><div class="card-h" style="margin-bottom:8px"><div><h3>Meta de vendas de ${MESF[today0().getMonth()]}</h3><div class="sub">Conta as vendas registradas em Finanças na categoria Fire Taste</div></div><button class="btn sm" data-act="set-sales-goal">${ic('target')}Mudar meta</button></div>
       <div class="cols c3" style="gap:10px"><div><div class="small muted">Vendido</div><b class="num" style="font-size:18px">${brl(sp.sold)}</b></div><div><div class="small muted">Falta</div><b class="num" style="font-size:18px">${brl(sp.missing)}</b></div><div><div class="small muted">Ritmo necessário</div><b class="num" style="font-size:18px">${sp.missing?brl(sp.perDay)+'/dia':'Batida!'}</b></div></div>
@@ -1599,7 +1602,7 @@ function pNegocios(){
   if(tab==='clientes'){
     const list = S.customers.map(c=>({c, st:customerStats(c)})).sort((a,b)=>b.st.total-a.st.total);
     const vip = list.filter(x=>x.st.n>=3).length;
-    return head('Clientes', 'Quem compra da Fire Taste e quanto.', `<button class="btn primary" data-act="new-customer">${ic('user-plus')}Novo cliente</button>`) + `
+    return head('Clientes', `Quem compra de ${S.biz} e quanto.`, `<button class="btn primary" data-act="new-customer">${ic('user-plus')}Novo cliente</button>`) + `
     <div class="cols c3" style="margin-bottom:14px">${kpi('Clientes',String(S.customers.length),'users','no total')}${kpi('Compram sempre',String(vip),'star','3 pedidos ou mais')}${kpi('Gasto médio',brl(list.reduce((a,x)=>a+x.st.total,0)/Math.max(1,list.length)),'receipt','por cliente')}</div>
     <section class="card"><div class="list">${list.map(({c,st})=>`<button class="li" data-act="customer" data-id="${c.id}" style="text-align:left;width:100%"><div class="av" style="background:#e8c3a8">${initials(c.name)}</div><div class="grow"><b style="font-size:13.5px">${esc(c.name)}</b> ${st.n>=3?'<span class="pill info" style="margin-left:4px">Fiel</span>':''}<div class="small muted ellipsis">${esc(c.contact)}</div></div><div style="text-align:right"><b class="num">${brl(st.total)}</b><div class="small muted">${st.n} ${st.n===1?'pedido':'pedidos'}${st.last?' · último '+relDay(st.last):''}</div></div></button>`).join('')}</div></section>`;
   }
@@ -1609,7 +1612,7 @@ function pNegocios(){
       <div class="list">${p.steps.map((s,i)=>`<div class="row" style="padding:6px 0"><button class="check ${s.d?'on':''}" data-act="step" data-p="${p.id}" data-i="${i}" aria-label="Concluir etapa">${s.d?ic('check'):''}</button><span class="grow ${s.d?'done-txt':''}" style="font-size:13.5px">${esc(s.t)}</span></div>`).join('')}</div>
       <form class="row step-form" data-p="${p.id}" style="margin-top:10px" autocomplete="off"><label for="st-${p.id}" style="position:absolute;left:-9999px">Nova etapa</label><input id="st-${p.id}" placeholder="Nova etapa" class="grow" style="background:var(--soft);border:0;border-radius:10px;padding:9px 11px;outline:none"/><button class="btn sm">${ic('plus')}Adicionar</button></form></section>`; }).join('')}</div>`;
   }
-  return head(S.ws===S.wsList[0].id ? 'Pedidos da Fire Taste' : 'Pedidos', 'Arraste o pedido para a próxima etapa.', `<button class="btn primary" data-act="new-order">${ic('plus')}Novo pedido</button>`) + board('orders');
+  return head(S.biz==='Fire Taste' ? 'Pedidos da Fire Taste' : 'Pedidos', 'Arraste o pedido para a próxima etapa.', `<button class="btn primary" data-act="new-order">${ic('plus')}Novo pedido</button>`) + board('orders');
 }
 
 /* ---------- Notas ---------- */
@@ -1828,11 +1831,11 @@ const money = s => { const n = parseFloat(String(s).replace(/[^\d,.-]/g,'').repl
 /* ---------- empresas (espaços de trabalho) ---------- */
 const wsKeys = o => Object.keys(o).filter(k => !GLOBAL_KEYS.includes(k));
 function wsSnapshot(){ const o = {}; wsKeys(S).forEach(k => o[k] = S[k]); return JSON.parse(JSON.stringify(o)); }
-function blankWs(){
+function blankWs(name){
   const d = defaults(), o = {};
   wsKeys(d).forEach(k => { const v = d[k]; o[k] = Array.isArray(v) ? [] : (v && typeof v==='object') ? {} : v; });
   o.wallets = [{id:'banco',name:'Conta principal',type:'Banco',balance:0,tint:'#8fb3d9',icon:'landmark'},{id:'caixa',name:'Caixa',type:'Negócio',balance:0,tint:'#e08a5f',icon:'wallet'}];
-  o.limit = 1000; o.salesGoal = 1000;
+  o.limit = 1000; o.salesGoal = 1000; o.biz = name || 'Meu negócio';
   return o;
 }
 function loadWs(data){
@@ -1857,7 +1860,7 @@ function switchWs(id){
 function addWs(name, color){
   const id = 'w' + uid();
   S.wsList.push({id, name:cap(name), color: color || WS_COLORS[S.wsList.length % WS_COLORS.length]});
-  S.wsData[id] = blankWs();
+  S.wsData[id] = blankWs(cap(name));
   switchWs(id);
 }
 function popWs(anchor){
@@ -1872,7 +1875,11 @@ function formWs(w){
     onSubmit: () => {
       const n = val('n'); if(!n) return false;
       const sel = document.querySelector('.ws-col.on'); color = sel ? sel.dataset.c : color;
-      if(w){ w.name = cap(n); w.color = color; renderTop(); render(); toast('Empresa atualizada','building-2'); }
+      if(w){
+        const old = w.name, nn = cap(n);
+        if(w.id===S.ws){ if(S.biz===old) S.biz = nn; } else if(S.wsData[w.id] && S.wsData[w.id].biz===old){ S.wsData[w.id].biz = nn; }
+        w.name = nn; w.color = color; renderTop(); render(); toast('Empresa atualizada','building-2');
+      }
       else addWs(n, color);
     }});
 }
@@ -1903,12 +1910,12 @@ function formEvent(){
     submit:'Salvar compromisso', onSubmit:()=>{ const t = val('t'); if(!t) return false; S.events.push({id:uid(),kind:'event',title:cap(t),date:val('d'),time:val('h'),end:val('e'),tag:val('g')}); toast('Compromisso salvo na agenda','calendar'); }});
 }
 function formTask(title=''){
-  openModal({title:'Nova tarefa', fields:[{id:'t',label:'Tarefa',value:title,req:1,ph:'Ex.: estudar derivadas'},{id:'g',label:'Categoria',type:'select',value:'Pessoal',options:['UFPR','Colégio','Fire Taste','Pessoal','Projetos'].map(k=>[k,k]),half:1},{id:'d',label:'Prazo',type:'date',value:dAdd(1),half:1}],
+  openModal({title:'Nova tarefa', fields:[{id:'t',label:'Tarefa',value:title,req:1,ph:'Ex.: estudar derivadas'},{id:'g',label:'Categoria',type:'select',value:'Pessoal',options:['UFPR','Colégio',S.biz,'Pessoal','Projetos'].map(k=>[k,k]),half:1},{id:'d',label:'Prazo',type:'date',value:dAdd(1),half:1}],
     submit:'Adicionar tarefa', onSubmit:()=>{ const t = val('t'); if(!t) return false; S.tasks.push({id:uid(),lane:'todo',title:cap(t),tag:val('g'),due:val('d')||dAdd(1)}); toast('Tarefa adicionada em A fazer','list-todo'); }});
 }
 function formNote(n){
   openModal({title:n?'Editar nota':'Nova nota', fields:[{id:'t',label:'Título',value:n?.title,req:1},{id:'b',label:'Texto',type:'textarea',value:n?.body},{id:'g',label:'Etiqueta',type:'select',value:n?.tag||'Pessoal',options:['Pessoal','UFPR','Colégio','Fire Taste','Projetos'].map(k=>[k,k])}],
-    submit:n?'Salvar nota':'Criar nota', onSubmit:()=>{ const t = val('t'); if(!t) return false; const tint = {'UFPR':'#8fb3d9','Colégio':'#9cc3a5','Fire Taste':'#d79a8f','Projetos':'#aaa3d6','Pessoal':'#a7aeb8'}[val('g')];
+    submit:n?'Salvar nota':'Criar nota', onSubmit:()=>{ const t = val('t'); if(!t) return false; const tint = {'UFPR':'#8fb3d9','Colégio':'#9cc3a5',[S.biz]:'#d79a8f','Projetos':'#aaa3d6','Pessoal':'#a7aeb8'}[val('g')];
       if(n){ Object.assign(n,{title:t,body:val('b'),tag:val('g'),tint}); toast('Nota salva','sticky-note'); } else { S.notes.unshift({id:uid(),title:t,body:val('b'),tag:val('g'),tint,when:dAdd(0)}); toast('Nota criada','sticky-note'); } }});
 }
 function formBill(){
@@ -1916,7 +1923,7 @@ function formBill(){
     submit:'Salvar conta', onSubmit:()=>{ const n = val('n'), v = money(val('v')); if(!n||!v) return false; S.bills.push({id:uid(),name:cap(n),amount:v,due:val('d'),cat:val('c'),paid:false,key:val('k')}); S.events.push({id:uid(),kind:'reminder',title:'Pagar '+n.toLowerCase(),date:val('d'),time:'09:00'}); toast(`Conta salva com lembrete em ${relDay(val('d'))}`,'receipt'); }});
 }
 function formTx(kind){
-  openModal({title:kind==='in'?'Nova entrada':'Novo gasto', fields:[{id:'d',label:'Descrição',req:1,ph:kind==='in'?'Ex.: venda no Instagram':'Ex.: almoço'},{id:'v',label:'Valor (R$)',num:1,req:1,ph:'0,00',half:1},{id:'c',label:'Categoria',type:'select',value:kind==='in'?'Fire Taste':'Alimentação',options:Object.keys(CATC).map(k=>[k,k]),half:1},{id:'w',label:kind==='in'?'Entrou em':'Saiu de',type:'select',value:kind==='in'?'caixa':'banco',options:S.wallets.map(w=>[w.id,w.name])}],
+  openModal({title:kind==='in'?'Nova entrada':'Novo gasto', fields:[{id:'d',label:'Descrição',req:1,ph:kind==='in'?'Ex.: venda no Instagram':'Ex.: almoço'},{id:'v',label:'Valor (R$)',num:1,req:1,ph:'0,00',half:1},{id:'c',label:'Categoria',type:'select',value:kind==='in'?S.biz:'Alimentação',options:catList().map(k=>[k,k]),half:1},{id:'w',label:kind==='in'?'Entrou em':'Saiu de',type:'select',value:kind==='in'?'caixa':'banco',options:S.wallets.map(w=>[w.id,w.name])}],
     submit:'Salvar', onSubmit:()=>{ const v = money(val('v')); if(!val('d')||!v) return false; addTx({kind,desc:cap(val('d')),cat:val('c'),amount:v,wallet:val('w')}); toast(`${kind==='in'?'Entrada':'Gasto'} de ${brl(v)} salvo em ${esc(walletById(val('w')).name)}`,'wallet'); }});
 }
 function formGoal(){
@@ -1942,7 +1949,7 @@ function formOrder(){
   openModal({title:'Novo pedido', fields:[{id:'c',label:'Cliente',req:1},{id:'i',label:'Itens',ph:'Ex.: 2× Molho Habanero',req:1},{id:'v',label:'Total (R$)',num:1,req:1,half:1},{id:'ch',label:'Canal',type:'select',value:'Instagram',options:[['Instagram','Instagram'],['Site','Site'],['WhatsApp','WhatsApp'],['Feira','Feira']],half:1}],
     submit:'Criar pedido', onSubmit:()=>{ if(!val('c')) return false; const n = Math.max(1000, ...S.orders.map(o=>+o.id.slice(3)||0))+1; const total = money(val('v')), cust = cap(val('c'));
       S.orders.unshift({id:'FT-'+n,cust,items:val('i').split(/[,;]\s*/),total,ch:val('ch'),when:'agora',lane:'pack'});
-      if(total) addTx({kind:'in',desc:`Pedido FT-${n} (${cust})`,cat:'Fire Taste',amount:total,wallet:'caixa'});
+      if(total) addTx({kind:'in',desc:`Pedido FT-${n} (${cust})`,cat:S.biz,amount:total,wallet:'caixa'});
       if(!S.customers.some(c=>c.name.toLowerCase()===cust.toLowerCase())) S.customers.push({id:uid(),name:cust,contact:val('ch'),since:dAdd(0),hist:[]});
       toast(`Pedido FT-${n} em A embalar. Venda de ${brl(total)} somada à meta do mês`,'package'); }});
 }
@@ -2011,8 +2018,8 @@ function runCommand(text){
   if((m = low.match(/^(gastei|paguei|recebi|ganhei|vendi)\s+(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)(.*)$/))){
     const kind = /recebi|ganhei|vendi/.test(m[1]) ? 'in' : 'out', v = parseFloat(m[2].replace(',','.'));
     const desc = cap(t.slice(t.toLowerCase().indexOf(m[2])+m[2].length).replace(/^\s*(reais|real)?\s*(com|de|em|no|na)?\s*/i,'').trim()) || (kind==='in'?'Entrada':'Gasto');
-    const cat = kind==='in' ? (/fire|molho|venda|vendi/.test(low)?'Fire Taste':'Trabalho') : (/uber|onibus|gasolina/.test(low)?'Transporte':/mercado|lanche|almoco|comida|ifood/.test(low)?'Alimentação':/pimenta|vidro|rotulo|embalag/.test(low)?'Fire Taste':/livro|xerox|curso/.test(low)?'Estudos':'Lazer');
-    undoPoint(); const wallet = /dinheiro|especie/.test(low) ? 'dinheiro' : (kind==='in' && cat==='Fire Taste') ? 'caixa' : 'banco';
+    const cat = kind==='in' ? (/fire|molho|venda|vendi/.test(low)?S.biz:'Trabalho') : (/uber|onibus|gasolina/.test(low)?'Transporte':/mercado|lanche|almoco|comida|ifood/.test(low)?'Alimentação':/pimenta|vidro|rotulo|embalag/.test(low)?'Fire Taste':/livro|xerox|curso/.test(low)?'Estudos':'Lazer');
+    undoPoint(); const wallet = /dinheiro|especie/.test(low) ? 'dinheiro' : (kind==='in' && cat===S.biz) ? 'caixa' : 'banco';
     addTx({kind,desc,cat,amount:v,wallet}); toast(`${kind==='in'?'Entrada':'Gasto'} de <b>${brl(v)}</b> salvo em ${cat} (${esc(walletById(wallet).name)})`,'wallet',{undo:true}); render(); return;
   }
   if(/^(anota|anotar|nota)\b/.test(low)){
@@ -2105,7 +2112,7 @@ document.addEventListener('click', e => {
     case 'set': { const key = iso(today0()), i = +a.dataset.i, j = +a.dataset.j; S.workout[key][i][j] = S.workout[key][i][j]?0:1; render(); break; }
     case 'reset-workout': delete S.workout[iso(today0())]; render(); break;
     case 'step': { const p = S.projects.find(x=>x.id===a.dataset.p); p.steps[+a.dataset.i].d ^= 1; render(); break; }
-    case 'restock': S.tasks.push({id:uid(),lane:'todo',title:'Repor '+a.dataset.n.toLowerCase(),tag:'Fire Taste',due:dAdd(2)}); toast(`Tarefa criada: repor ${esc(a.dataset.n.toLowerCase())}`,'package'); break;
+    case 'restock': S.tasks.push({id:uid(),lane:'todo',title:'Repor '+a.dataset.n.toLowerCase(),tag:S.biz,due:dAdd(2)}); toast(`Tarefa criada: repor ${esc(a.dataset.n.toLowerCase())}`,'package'); break;
     case 'm-play': S.music.playing = !S.music.playing; render(); break;
     case 'm-next': S.music.idx = (S.music.idx+1)%TRACKS.length; S.music.pos = 0; render(); break;
     case 'm-prev': S.music.idx = (S.music.idx+TRACKS.length-1)%TRACKS.length; S.music.pos = 0; render(); break;
@@ -2114,6 +2121,7 @@ document.addEventListener('click', e => {
     case 'logout': if(sb){ sb.auth.signOut().finally(()=>{ try{ localStorage.removeItem(KEY); }catch(e){} location.reload(); }); } break;
     case 'install': if(installEvt){ installEvt.prompt(); installEvt.userChoice.finally(()=>{ installEvt = null; render(); }); } break;
     case 'login-mode': loginMode = a.dataset.m; showLogin(); break;
+    case 'login-google': { if(!sb) break; lgMsg('Abrindo o Google…'); sb.auth.signInWithOAuth({provider:'google', options:{redirectTo: location.origin + location.pathname}}).then(({error}) => { if(error) lgMsg('Não deu para abrir o Google: ' + error.message, true); }); break; }
     case 'forgot': { const em = $('#lgEmail').value.trim(); if(!em){ lgMsg('Digite seu e-mail acima primeiro.', true); break; } sb.auth.resetPasswordForEmail(em, {redirectTo: location.origin + location.pathname}).then(({error}) => lgMsg(error ? LOGIN_ERR(error.message) : `Se ${em} tiver conta, chega um link para criar senha nova.`, !!error)); break; }
     case 'welcome-ex': startWith(defaults()); toast('Começando com os dados de exemplo','sparkles'); break;
     case 'welcome-empty': startWith(emptyState()); toast('Tudo vazio. Comece pelo + embaixo.','layout-grid'); break;
@@ -2123,7 +2131,7 @@ document.addEventListener('click', e => {
     case 'new-wallet': formWallet(); break;
     case 'wallet-edit': formWallet(find(S.wallets)); break;
     case 'set-limit': formNumber('Limite de gastos do mês','Você recebe um aviso aos 80% e ao passar do limite.',S.limit,v=>{ S.limit = v; toast(`Limite de gastos: ${brl(v)} por mês`,'gauge'); }); break;
-    case 'set-sales-goal': formNumber('Meta de vendas do mês','Quanto a Fire Taste deve vender neste mês.',S.salesGoal,v=>{ S.salesGoal = v; toast(`Meta de vendas: ${brl(v)}`,'target'); }); break;
+    case 'set-sales-goal': formNumber('Meta de vendas do mês',`Quanto ${S.biz} deve vender neste mês.`,S.salesGoal,v=>{ S.salesGoal = v; toast(`Meta de vendas: ${brl(v)}`,'target'); }); break;
     case 'ext-per': extPeriod = a.dataset.k; render(); break;
     case 'ext-wal': extWallet = a.dataset.k; render(); break;
     case 'ext-csv': { const rows = extratoRows(); if(!DL || !rows.length){ toast('Nada para baixar neste período','info'); break; } const T = today0(); DL.save({filename:`extrato-today-${iso(T)}.csv`, data:extratoCsv(rows)}).then(r=>{ if(r && r.status==='saved') toast('Extrato baixado','download'); }).catch(e=>{ if(e && e.code==='declined') return; toast('Não deu para baixar agora. Use Copiar e cole numa planilha.','info'); }); break; }
@@ -2233,16 +2241,21 @@ document.addEventListener('pointerup', endDrag);
 document.addEventListener('pointercancel', endDrag);
 
 /* ================= relógio, lembretes, música ================= */
+function remindersOf(evs, T, t, d, who){
+  evs.forEach(e => {
+    if(e.kind!=='reminder' || e.done || e.date!==T) return;
+    const k1 = e.id+'@'+T, k0 = e.id+'@pre', tag = who ? who+': ' : '';
+    if(e.time===t && !S.fired[k1]){ S.fired[k1] = 1; notify(`${tag}Lembrete: ${e.title}`,'bell-ring'); }
+    if(S.warn10){ const [h,m] = e.time.split(':').map(Number), pre = new Date(d); pre.setHours(h, m-10, 0, 0); if(hhmm(pre)===t && !S.fired[k0]){ S.fired[k0] = 1; notify(`${tag}Em 10 minutos: ${e.title}`,'clock'); } }
+  });
+}
 function tick(){
   const d = new Date(), t = hhmm(d), ct = $('#clockTime');
   if(ct && ct.textContent!==t) ct.textContent = t;
-  const T = iso(today0());
-  S.events.forEach(e => {
-    if(e.kind!=='reminder' || e.done || e.date!==T) return;
-    const k1 = e.id+'@'+T, k0 = e.id+'@pre';
-    if(e.time===t && !S.fired[k1]){ S.fired[k1] = 1; notify(`Lembrete: ${e.title}`,'bell-ring'); }
-    if(S.warn10){ const [h,m] = e.time.split(':').map(Number), pre = new Date(d); pre.setHours(h, m-10, 0, 0); if(hhmm(pre)===t && !S.fired[k0]){ S.fired[k0] = 1; notify(`Em 10 minutos: ${e.title}`,'clock'); } }
-  });
+  const T = iso(today0()), multi = S.wsList.length>1;
+  remindersOf(S.events, T, t, d, multi ? curWs().name : '');
+  /* lembretes das outras empresas também tocam, com o nome da empresa */
+  S.wsList.forEach(w => { const dt = S.wsData[w.id]; if(w.id!==S.ws && dt && Array.isArray(dt.events)) remindersOf(dt.events, T, t, d, w.name); });
   if(S.music.playing){
     const tr = TRACKS[S.music.idx]; S.music.pos += 1;
     if(S.music.pos >= tr.len){ S.music.idx = (S.music.idx+1)%TRACKS.length; S.music.pos = 0; if(S.page==='inicio') render(); }
@@ -2273,7 +2286,7 @@ function importData(text){
 function emptyState(){
   const d = defaults();
   ['events','tasks','bills','tx','goals','notes','orders','chats','customers','saved','notifs','projects','habits'].forEach(k => d[k] = []);
-  d.aiThreads = {}; d.sel = {chat:null}; d.wallets.forEach(w => w.balance = 0); d.stock = [];
+  d.aiThreads = {}; d.sel = {chat:null}; d.wallets.forEach(w => w.balance = 0); d.stock = []; d.biz = 'Meu negócio';
   return d;
 }
 
@@ -2320,6 +2333,16 @@ function startWith(st){
   closeModal(); refreshAll();
 }
 const LOGIN_ERR = m => /invalid login/i.test(m) ? 'E-mail ou senha incorretos.' : /not confirmed/i.test(m) ? 'Confirme seu e-mail pelo link que enviamos antes de entrar.' : /already registered|already been registered/i.test(m) ? 'Esse e-mail já tem conta. Toque em Entrar.' : /at least 6|password should/i.test(m) ? 'A senha precisa de pelo menos 6 caracteres.' : /rate limit|too many/i.test(m) ? 'Muitas tentativas. Espere um minuto e tente de novo.' : /fetch|network/i.test(m) ? 'Sem internet. Verifique a conexão.' : m;
+const GOOGLE_SVG = '<b style="font:700 16px/1 Arial,sans-serif;background:conic-gradient(from -45deg,#ea4335 0 25%,#fbbc05 0 50%,#34a853 0 75%,#4285f4 0);-webkit-background-clip:text;background-clip:text;color:transparent">G</b>';
+let googleOk = null;   // o Google já está ligado no Supabase?
+async function checkGoogle(){
+  const b = $('#lgGoogle'); if(!b) return;
+  if(googleOk===null){
+    try{ const r = await fetch(SB_URL + '/auth/v1/settings', {headers:{apikey:SB_KEY}}); const j = await r.json(); googleOk = !!(j && j.external && j.external.google); }catch(e){ googleOk = false; }
+  }
+  b.disabled = !googleOk; b.title = googleOk ? '' : 'O login com Google ainda não foi ativado neste projeto';
+  const sp = b.querySelector('span'); if(sp) sp.textContent = googleOk ? 'Entrar com Google' : 'Entrar com Google (ainda não ativado)';
+}
 function showLogin(){
   let el = $('#login');
   if(!el){ el = document.createElement('div'); el.id = 'login'; el.className = 'login-wrap'; document.body.append(el); }
@@ -2331,10 +2354,11 @@ function showLogin(){
     <button class="btn primary" style="width:100%;justify-content:center;padding:12px" id="lgBtn">${loginMode==='in'?'Entrar':'Criar conta'}</button>
     ${loginMode==='in'?`<button type="button" class="link" data-act="forgot" style="margin:12px auto 0;display:flex">Esqueci minha senha</button>`:''}
     <div class="or"><span>ou</span></div>
-    <button type="button" class="btn" style="width:100%;justify-content:center" disabled title="Em breve">Entrar com Google (em breve)</button>
+    ${DESKTOP ? `<p class="small muted" style="text-align:center">Entrou com Google no navegador? Use "Esqueci minha senha" com o mesmo e-mail para criar uma senha e entrar aqui.</p>` : `<button type="button" class="btn" id="lgGoogle" data-act="login-google" style="width:100%;justify-content:center" disabled>${GOOGLE_SVG}<span>Entrar com Google</span></button>`}
     <p class="small" id="lgMsg" role="status" style="margin-top:12px;min-height:18px"></p>
   </form>`;
   el.hidden = false;
+  checkGoogle();
 }
 function hideLogin(){ const el = $('#login'); if(el) el.hidden = true; }
 const lgMsg = (t, bad) => { const m = $('#lgMsg'); if(m){ m.textContent = t; m.style.color = bad ? 'var(--crit)' : 'var(--ok)'; } };
