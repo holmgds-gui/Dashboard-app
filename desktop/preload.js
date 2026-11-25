@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('todayDesktop', {
   setTheme: (mode) => ipcRenderer.send('today:set-theme', mode === 'light' ? 'light' : 'dark'),
   retry: () => ipcRenderer.send('today:retry'),
   // botões da janela (minimizar, maximizar, fechar)
+  setGlass: (t) => ipcRenderer.send('today:set-glass', +t || 0),
   winCtl: (cmd) => ipcRenderer.send('today:win-ctl', String(cmd)),
   onWinState: (cb) => ipcRenderer.on('today:win-state', (_e, max) => { try { cb(!!max); } catch (e) {} }),
   // barra flutuante (aparece ao minimizar)

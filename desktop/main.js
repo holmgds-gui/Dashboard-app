@@ -14,6 +14,9 @@ let barSide = 'left';
 let barSize = { w: 72, h: 360 };
 let quitting = false;
 let tray = null;
+let fauxMax = false;       // "tela cheia" feita pelo programa (mantém o vidro; o maximizar do Windows deixa o fundo preto)
+let restoreBounds = null;
+let glassSolid = false;
 
 // ---- barra flutuante ----
 const posFile = () => path.join(app.getPath('userData'), 'bar-position.json');
@@ -159,8 +162,12 @@ function createWindow() {
   win.on('close', () => { quitting = true; });
   win.on('closed', () => { if (bar && !bar.isDestroyed()) bar.destroy(); win = null; app.quit(); });
 
-  const sendState = () => { if (win && !win.isDestroyed()) win.webContents.send('today:win-state', win.isMaximized()); };
-  win.on('maximize', sendState);
+  const sendState = () => { if (win && !win.isDestroyed()) win.webContents.send('today:win-state', fauxMax || win.isMaximized()); };
+  // mexer na janela (arrastar/redimensionar) tira do modo tela cheia
+  win.on('will-move', () => { if (fauxMax) { fauxMax = false; sendState(); } });
+  win.on('will-resize', () => { if (fauxMax) { fauxMax = false; sendState(); } });
+  // duplo clique na faixa do topo maximiza "de verdade" e deixa o fundo preto: troca pela tela cheia do programa
+  win.on('maximize', () => { if (!fauxMax) { win.unmaximize(); setImmediate(toggleMax); } else sendState(); });
   win.on('unmaximize', sendState);
   win.webContents.on('did-finish-load', sendState);
 
@@ -172,14 +179,38 @@ function createWindow() {
 ipcMain.on('today:set-theme', (_e, mode) => {
   if (!win || (mode !== 'dark' && mode !== 'light')) return;
   nativeTheme.themeSource = mode;
+  if (glassSolid) { try { win.setBackgroundColor(mode === 'dark' ? '#0f141b' : '#eef1f5'); } catch (e) {} }
 });
 ipcMain.on('today:retry', () => { if (win) win.loadURL(APP_URL); });
+
+function toggleMax() {
+  if (!win || win.isDestroyed()) return;
+  if (win.isMaximized()) { win.unmaximize(); return; }
+  if (fauxMax) {
+    fauxMax = false;
+    if (restoreBounds) win.setBounds(restoreBounds);
+  } else {
+    restoreBounds = win.getBounds();
+    fauxMax = true;
+    win.setBounds(screen.getDisplayMatching(restoreBounds).workArea);
+  }
+  win.webContents.send('today:win-state', fauxMax);
+}
+// Translucidez: 0 = sólido (sem efeito do Windows), de 5 a 100 = acrílico com o app mais ou menos transparente
+ipcMain.on('today:set-glass', (e, t) => {
+  if (!win || win.isDestroyed() || e.sender !== win.webContents) return;
+  glassSolid = (+t || 0) <= 4;
+  try {
+    win.setBackgroundMaterial(glassSolid ? 'none' : 'acrylic');
+    win.setBackgroundColor(glassSolid ? (nativeTheme.shouldUseDarkColors ? '#0f141b' : '#eef1f5') : '#00000000');
+  } catch (err) {}
+});
 
 // Botões da janela desenhados pelo app
 ipcMain.on('today:win-ctl', (e, cmd) => {
   if (!win || win.isDestroyed() || e.sender !== win.webContents) return;
   if (cmd === 'min') win.minimize();
-  else if (cmd === 'max') { if (win.isMaximized()) win.unmaximize(); else win.maximize(); }
+  else if (cmd === 'max') { toggleMax(); }
   else if (cmd === 'close') win.close();
 });
 

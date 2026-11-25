@@ -566,8 +566,13 @@ a.btn{text-decoration:none;color:inherit}
 /* ---------- programa de PC: vidro real sobre a área de trabalho ---------- */
 html.desktop,body.desktop{background:transparent!important}
 body.desktop .bg{display:none}
-body.desktop[data-mode="dark"]{--ink-3:#a7b0bc;--ink-2:#c7ced8;--shell:rgba(12,16,22,.07);--card:rgba(255,255,255,.035);--card-hi:rgba(255,255,255,.085);--edge:rgba(255,255,255,.18);--line:rgba(255,255,255,.1);--soft:rgba(255,255,255,.08);--solid:rgba(20,25,33,.45);--shadow:0 18px 50px -28px rgba(0,0,0,.6)}
-body.desktop[data-mode="light"]{--shell:rgba(255,255,255,.08);--card:rgba(255,255,255,.14);--card-hi:rgba(255,255,255,.34);--edge:rgba(255,255,255,.55);--solid:rgba(246,248,250,.5);--shadow:0 18px 50px -28px rgba(30,40,60,.3)}
+body.desktop{--gk:1}
+body.desktop[data-mode="dark"]{--ink-3:#a7b0bc;--ink-2:#c7ced8;--shell:rgba(12,16,22,calc(.07*var(--gk)));--card:rgba(255,255,255,calc(.035*var(--gk)));--card-hi:rgba(255,255,255,calc(.085*var(--gk)));--edge:rgba(255,255,255,calc(.18*var(--gk) + .06));--line:rgba(255,255,255,.1);--soft:rgba(255,255,255,calc(.08*var(--gk)));--solid:rgba(20,25,33,calc(.45*var(--gk) + .25));--shadow:0 18px 50px -28px rgba(0,0,0,.6)}
+body.desktop[data-mode="light"]{--shell:rgba(255,255,255,calc(.08*var(--gk)));--card:rgba(255,255,255,calc(.14*var(--gk)));--card-hi:rgba(255,255,255,calc(.34*var(--gk)));--edge:rgba(255,255,255,calc(.55*var(--gk) + .1));--solid:rgba(246,248,250,calc(.5*var(--gk) + .25));--shadow:0 18px 50px -28px rgba(30,40,60,.3)}
+/* modo sólido (translucidez 0) e janela maximizada: mostra o fundo do app em vez de deixar preto */
+body.desktop.solid .bg,body.desktop.max .bg{display:block}
+body.desktop.solid{background:#0f141b!important}
+body.desktop.solid[data-mode="light"]{background:#eef1f5!important}
 /* a área de trabalho já é desfocada pelo Windows (acrílico); desfocar de novo cada cartão só pesa */
 body.desktop .glass{backdrop-filter:none;-webkit-backdrop-filter:none}
 body.desktop .modal.glass,body.desktop .palette.glass,body.desktop .pop.glass,body.desktop .toast.glass,body.desktop .login{backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%)}
@@ -586,6 +591,10 @@ body.desktop:has(.scrim) .wc,body.desktop:has(.pop) .wc{pointer-events:auto}
 body.desktop [data-act="bg-pop"]{display:none}
 body.desktop .page-head h1,body.desktop .clock .time,body.desktop .kpi .val{text-shadow:0 1px 14px rgba(0,0,0,.25)}
 body.desktop[data-mode="light"] .page-head h1,body.desktop[data-mode="light"] .clock .time{text-shadow:0 1px 14px rgba(255,255,255,.5)}
+
+.range{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:99px;background:var(--soft);outline:none;margin:6px 0}
+.range::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.4);border:2px solid var(--solid);cursor:pointer}
+.range:focus-visible::-webkit-slider-thumb{outline:2px solid var(--accent);outline-offset:3px}
 
 .app{padding-top:max(14px,env(safe-area-inset-top))}
 @media (max-width:760px){.dock{bottom:max(10px,env(safe-area-inset-bottom))}}
@@ -727,7 +736,7 @@ function defaults(){
   );
   return {
     mode:'dark', bg:{type:'grad',preset:'aurora'}, ai:'claude', page:'inicio', sub:{}, warn10:true,
-    biz:'Fire Taste',
+    biz:'Fire Taste', glass:70,
     bar:defaultBar(), wsList:[{id:'w1',name:'Pessoal',color:WS_COLORS[0]}], ws:'w1', wsData:{},
     events: ev,
     tasks: [
@@ -868,6 +877,7 @@ function migrate(o){
   for(const k in d) if(!(k in o)) o[k] = d[k];
   o.tx.forEach(t => { if(!t.wallet) t.wallet = t.kind==='in' && t.cat==='Fire Taste' ? 'caixa' : 'banco'; });
   o.bar = normBar(o.bar);
+  o.glass = Number.isFinite(+o.glass) ? Math.min(100, Math.max(0, Math.round(+o.glass))) : 70;
   if(!Array.isArray(o.wsList) || !o.wsList.length) o.wsList = [{id:'w1',name:'Pessoal',color:WS_COLORS[0]}];
   if(!o.wsList.some(w=>w.id===o.ws)) o.ws = o.wsList[0].id;
   if(!o.wsData || typeof o.wsData!=='object') o.wsData = {};
@@ -886,7 +896,7 @@ S = migrate(load() || defaults());
 /* ================= sincronização (conta Claude) ================= */
 const LOCAL_KEYS = ['page','sub','sel','music','fired','_at','barOpen'];
 /* o que NÃO pertence a uma empresa (vale para a conta toda) */
-const GLOBAL_KEYS = ['mode','bg','ai','warn10','bar','wsList','ws','wsData','page','sub','sel','music','fired','_at','barOpen'];
+const GLOBAL_KEYS = ['mode','bg','ai','warn10','glass','bar','wsList','ws','wsData','page','sub','sel','music','fired','_at','barOpen'];
 let DOCREF = null, cloudSet = null, DL = null, syncState = 'local', lastJson = null, writing = false, dirty = false, syncTimer = null, applying = false;
 const DEVICE = (() => { try{ let d = localStorage.getItem('today-device'); if(!d){ d = uid()+uid(); localStorage.setItem('today-device', d); } return d; }catch(e){ return uid()+uid(); } })();
 function payloadJson(){
@@ -1653,13 +1663,14 @@ function barCard(){
 function popBarIcon(anchor, i){
   openPop(anchor, `<h4>Escolher ícone</h4><div class="ic-grid">${BAR_ICONS.map(n=>`<button class="${S.bar.items[i].icon===n?'on':''}" data-act="bar-set-icon" data-i="${i}" data-ic="${n}" aria-label="${n}">${ic(n)}</button>`).join('')}</div>`, 300);
 }
+const glassLabel = t => t<=4 ? 'Sólido' : t>=96 ? 'Quase invisível' : t+'%';
 function pAjustes(){
   const integ = [['WhatsApp','message-circle','WhatsApp Business'],['Gmail','mail','Conta Google'],['Google Agenda','calendar','Conta Google'],['Spotify','music','Conta Spotify'],['Pix','qr-code','Mercado Pago ou Asaas'],['Clima','cloud-sun','Serviço de previsão']];
   return head('Ajustes', 'Aparência, empresas, barra e conexões.') + `
   <div class="cols c2">
     <section class="card"><div class="card-h"><h3>Aparência</h3></div>
       <div class="row between" style="margin-bottom:14px"><span class="small" style="font-weight:600">Tema</span><div class="seg"><button class="${S.mode==='light'?'on':''}" data-act="set-mode" data-m="light">${'Claro'}</button><button class="${S.mode==='dark'?'on':''}" data-act="set-mode" data-m="dark">Escuro</button></div></div>
-      <div class="small" style="font-weight:600;margin-bottom:8px">Fundo</div>${DESKTOP?'<p class="small muted">No programa de PC o fundo é a sua própria área de trabalho, vista através do vidro.</p>':bgSwatches()}</section>
+      <div class="small" style="font-weight:600;margin-bottom:8px">Fundo</div>${DESKTOP?`<p class="small muted">No programa de PC o fundo é a sua própria área de trabalho, vista através do vidro.</p><div class="row between" style="margin:14px 0 6px"><span class="small" style="font-weight:600">Translucidez</span><span class="small muted" id="glassVal">${glassLabel(S.glass)}</span></div><input type="range" class="range" id="glassRange" min="0" max="100" step="1" value="${S.glass}" aria-label="Translucidez do vidro"/><div class="row between small muted" style="margin-top:4px"><span>Sólido</span><span>Quase invisível</span></div><div class="row" style="margin-top:10px;gap:8px"><button class="btn sm ghost" data-act="glass-set" data-v="70">Padrão</button><button class="btn sm ghost" data-act="glass-set" data-v="45">Mais firme</button><button class="btn sm ghost" data-act="glass-set" data-v="90">Mais transparente</button></div>`:bgSwatches()}</section>
     ${wsCard()}
     ${barCard()}
     <section class="card"><div class="card-h"><h3>IAs</h3><span class="small muted">Precisam de chave de API</span></div>${AIS.map(a=>`<div class="row" style="padding:7px 0">${aiDot(a,1).replace('ai-dot"','ai-dot" ').replace('style="','style="width:30px;height:30px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;')}<div class="grow"><b style="font-size:13px">${a.name}</b><div class="small muted">${a.by}</div></div>${S.ai===a.id?'<span class="pill ok"><span class="d"></span>Em uso</span>':`<button class="btn sm" data-act="set-ai" data-id="${a.id}">Usar</button>`}</div>`).join('')}</section>
@@ -1675,9 +1686,18 @@ function pAjustes(){
 const PAGES = {inicio:pInicio, ia:pIa, agenda:pAgenda, mensagens:pMensagens, pagamentos:pPagamentos, financas:pFinancas, tarefas:pTarefas, estudos:pEstudos, habitos:pHabitos, negocios:pNegocios, notas:pNotas, salvos:pSalvos, ajustes:pAjustes};
 
 /* ================= render ================= */
-let lastPage = null, lastBarCfg = null;
+let lastPage = null, lastBarCfg = null, lastGlass = null;
+/* translucidez do programa de PC: 70 = como antes; 100 = quase invisível; 0 = sólido */
+function applyGlass(){
+  if(!DESKTOP) return;
+  const t = S.glass, k = t>=100 ? 0 : Math.pow((100 - t)/30, 1.6);
+  document.body.style.setProperty('--gk', k.toFixed(3));
+  document.body.classList.toggle('solid', t<=4);
+  if(lastGlass!==t){ lastGlass = t; try{ window.todayDesktop && window.todayDesktop.setGlass && window.todayDesktop.setGlass(t); }catch(e){} }
+}
 function render(keepScroll=true){
   document.body.dataset.mode = S.mode;
+  applyGlass();
   if(DESKTOP && window.todayDesktop){ try{ window.todayDesktop.setTheme(S.mode); if(window.todayDesktop.barConfig && lastBarCfg!==S.bar.float){ lastBarCfg = S.bar.float; window.todayDesktop.barConfig(!!S.bar.float); } }catch(e){} }
   const sc = $('#scroll'), y = sc.scrollTop;
   renderDock(); renderSubs();
@@ -2050,6 +2070,7 @@ document.addEventListener('click', e => {
     case 'set-ai': S.ai = id; closePop(); renderTop(); render(); toast(`Agora usando ${aiById(id).name}`,'sparkles'); break;
     case 'set-bg': S.bg = a.dataset.k==='scene' ? {type:'scene'} : a.dataset.k==='photo' ? {type:'photo',data:S.bg.data||photoMem} : {type:'grad',preset:a.dataset.k}; renderBg(); save(); if(popEl){ popBg($('[data-act="bg-pop"]')); } else render(); break;
     case 'more': sheetMore(); break;
+    case 'glass-set': S.glass = +a.dataset.v; applyGlass(); render(); break;
     case 'bar-toggle': S.barOpen = !S.barOpen; render(); break;
     case 'ws-pop': popEl ? closePop() : popWs(a); break;
     case 'ws-switch': switchWs(id); break;
@@ -2188,6 +2209,8 @@ document.addEventListener('dragstart', e => { const r = e.target.closest && e.ta
 document.addEventListener('dragover', e => { if(barDrag===null) return; const r = e.target.closest('.bar-row'); if(!r) return; e.preventDefault(); document.querySelectorAll('.bar-row.over').forEach(x=>x.classList.remove('over')); r.classList.add('over'); });
 document.addEventListener('drop', e => { if(barDrag===null) return; const r = e.target.closest('.bar-row'); if(!r) return; e.preventDefault(); const f = barDrag; barDrag = null; moveBar(f, +r.dataset.bi); });
 document.addEventListener('dragend', () => { barDrag = null; document.querySelectorAll('.bar-row.drag,.bar-row.over').forEach(x=>x.classList.remove('drag','over')); });
+document.addEventListener('input', e => { if(e.target && e.target.id==='glassRange'){ S.glass = +e.target.value; applyGlass(); const v = $('#glassVal'); if(v) v.textContent = glassLabel(S.glass); } });
+document.addEventListener('change', e => { if(e.target && e.target.id==='glassRange'){ S.glass = +e.target.value; applyGlass(); save(); } });
 addEventListener('hashchange', () => { const h = location.hash.slice(1); if(h && h!==S.page && PAGES[h]) go(h); });
 
 /* ================= arrastar no quadro ================= */
@@ -2484,7 +2507,7 @@ if(BARWIN){
   renderBg(); renderTop(); render(false);
   setInterval(tick, 1000);
   if(DESKTOP && window.todayDesktop && window.todayDesktop.onGoto) window.todayDesktop.onGoto(id => { if(id && PAGES[id]) go(id); });
-  if(DESKTOP){ renderWinbar(); if(window.todayDesktop && window.todayDesktop.onWinState) window.todayDesktop.onWinState(m => { winMax = !!m; renderWinbar(); }); }
+  if(DESKTOP){ renderWinbar(); if(window.todayDesktop && window.todayDesktop.onWinState) window.todayDesktop.onWinState(m => { winMax = !!m; document.body.classList.toggle('max', winMax); renderWinbar(); }); }
   if(TARGET==='pwa') initPwa(); else initCloud();
   let lastW = innerWidth; addEventListener('resize', () => { if((lastW<=760) !== (innerWidth<=760)){ lastW = innerWidth; render(); } });
 }
