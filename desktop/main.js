@@ -146,12 +146,17 @@ function createWindow() {
   // Links externos (Salvos, e-mails de confirmação) abrem no navegador padrão
   win.webContents.setWindowOpenHandler(({ url }) => {
     // login do Spotify abre numa janelinha e volta para o Today com o código de acesso
+    if (/^https:\/\/accounts\.google\.com\//.test(url)) {
+      // login do Google (Agenda): janelinha com identificação de navegador comum, senão o Google recusa
+      return { action: 'allow', overrideBrowserWindowOptions: { width: 500, height: 700, autoHideMenuBar: true, title: 'Google', parent: win, webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false } } };
+    }
     if (/^https:\/\/accounts\.spotify\.com\//.test(url)) {
       return { action: 'allow', overrideBrowserWindowOptions: { width: 480, height: 740, autoHideMenuBar: true, title: 'Spotify', parent: win, webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false } } };
     }
     if (/^https?:/.test(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
+  win.webContents.on('did-create-window', (child) => { try { child.webContents.setUserAgent(child.webContents.getUserAgent().replace(/\s?(Electron|today|TodayDesktop)\/[\d.\-\w]+/gi, '')); } catch (e) {} });
   win.webContents.on('will-navigate', (e, url) => {
     if (!url.startsWith(APP_URL)) { e.preventDefault(); shell.openExternal(url); }
   });
