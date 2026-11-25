@@ -1,7 +1,7 @@
 // Today para Windows: abre o app em uma janela de vidro (acrílico do Windows 11),
 // mostrando a área de trabalho desfocada atrás. O conteúdo vem do site no GitHub Pages,
 // então login, sincronização e atualizações são os mesmos do app web.
-const { app, BrowserWindow, ipcMain, nativeTheme, shell, Menu, screen, Tray, nativeImage, session } = require('electron');
+const { app, BrowserWindow, ipcMain, nativeTheme, shell, Menu, screen, Tray, nativeImage, session, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -318,6 +318,30 @@ ipcMain.handle('today:app-clear', async (_e, partition) => {
   return true;
 });
 
-app.whenReady().then(() => { createWindow(); createTray(); });
+
+// ---- atualização automática (baixa em segundo plano e instala ao reiniciar) ----
+function setupUpdater() {
+  if (!app.isPackaged) return;
+  let autoUpdater;
+  try { ({ autoUpdater } = require('electron-updater')); } catch (e) { return; }
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('error', () => {});
+  autoUpdater.on('update-downloaded', (info) => {
+    dialog.showMessageBox(win && !win.isDestroyed() ? win : undefined, {
+      type: 'info',
+      title: 'Today',
+      message: 'Nova versão do Today pronta (' + info.version + ')',
+      detail: 'Reinicie para atualizar agora. Se preferir, ela é instalada quando você fechar o programa.',
+      buttons: ['Reiniciar agora', 'Depois'],
+      defaultId: 0, cancelId: 1,
+    }).then((r) => { if (r.response === 0) { app.isQuitting = true; autoUpdater.quitAndInstall(false, true); } }).catch(() => {});
+  });
+  const check = () => autoUpdater.checkForUpdates().catch(() => {});
+  setTimeout(check, 8000);
+  setInterval(check, 4 * 60 * 60 * 1000);
+}
+
+app.whenReady().then(() => { createWindow(); createTray(); setupUpdater(); });
   app.on('window-all-closed', () => app.quit());
 }

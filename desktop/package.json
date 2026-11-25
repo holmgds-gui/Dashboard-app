@@ -1,7 +1,7 @@
 {
   "name": "today-desktop",
   "productName": "Today",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Today para Windows: o painel pessoal em uma janela de vidro.",
   "author": "holmgds-gui",
   "license": "UNLICENSED",
@@ -18,15 +18,38 @@
   "build": {
     "appId": "io.github.holmgds-gui.today",
     "productName": "Today",
-    "directories": { "buildResources": "build", "output": "dist" },
-    "files": ["main.js", "preload.js", "offline.html", "build/icon.png"],
-    "win": { "target": "nsis", "icon": "build/icon.ico", "artifactName": "Today-Setup-${version}.${ext}" },
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "offline.html",
+      "build/icon.png"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "artifactName": "Today-Setup-${version}.${ext}"
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Today"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "holmgds-gui",
+        "repo": "Dashboard-app",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "6.3.9"
   }
 }

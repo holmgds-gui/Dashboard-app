@@ -37,5 +37,8 @@ jobs:
             Baixe **Today-Setup-${{ steps.v.outputs.version }}.exe** abaixo e instale.
             Precisa do Windows 11 para o efeito de vidro (acrílico).
             Se o Windows mostrar "O Windows protegeu o computador", clique em **Mais informações** e depois em **Executar assim mesmo**.
-          files: desktop/dist/*.exe
+          files: |
+            desktop/dist/*.exe
+            desktop/dist/*.blockmap
+            desktop/dist/latest.yml
           make_latest: true
