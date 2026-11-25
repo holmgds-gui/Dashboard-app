@@ -145,6 +145,10 @@ function createWindow() {
 
   // Links externos (Salvos, e-mails de confirmação) abrem no navegador padrão
   win.webContents.setWindowOpenHandler(({ url }) => {
+    // login do Spotify abre numa janelinha e volta para o Today com o código de acesso
+    if (/^https:\/\/accounts\.spotify\.com\//.test(url)) {
+      return { action: 'allow', overrideBrowserWindowOptions: { width: 480, height: 740, autoHideMenuBar: true, title: 'Spotify', parent: win, webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false } } };
+    }
     if (/^https?:/.test(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
@@ -178,7 +182,11 @@ function createWindow() {
   // duplo clique na faixa do topo maximiza "de verdade" e deixa o fundo preto: troca pela tela cheia do programa
   win.on('maximize', () => { if (!fauxMax) { win.unmaximize(); setImmediate(toggleMax); } else sendState(); });
   win.on('unmaximize', sendState);
-  win.webContents.on('did-finish-load', sendState);
+  // manda o tamanho real da janela: se a página ficar maior que ela (acontece com o vidro do Windows), o Today encolhe junto
+  const sendSize = () => { if (win && !win.isDestroyed()) { const [w, h] = win.getContentSize(); win.webContents.send('today:win-size', w, h); } };
+  ['resize', 'maximize', 'unmaximize', 'restore', 'show', 'enter-full-screen', 'leave-full-screen'].forEach((ev) => win.on(ev, sendSize));
+  win.on('resized', () => { sendSize(); try { win.webContents.invalidate(); } catch (e) {} });
+  win.webContents.on('did-finish-load', () => { sendState(); sendSize(); });
 
   win.once('ready-to-show', () => win.show());
   win.loadURL(APP_URL);

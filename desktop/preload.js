@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('todayDesktop', {
   setGlass: (t) => ipcRenderer.send('today:set-glass', +t || 0),
   winCtl: (cmd) => ipcRenderer.send('today:win-ctl', String(cmd)),
   onWinState: (cb) => ipcRenderer.on('today:win-state', (_e, max) => { try { cb(!!max); } catch (e) {} }),
+  // tamanho real da janela: o Today se ajusta a ele mesmo se o Windows não avisar a página
+  onWinSize: (cb) => ipcRenderer.on('today:win-size', (_e, w, h) => { try { cb(+w || 0, +h || 0); } catch (e) {} }),
   // barra flutuante (aparece ao minimizar)
   barHit: (hit) => ipcRenderer.send('today:bar-hit', !!hit),
   barDragStart: () => ipcRenderer.send('today:bar-drag-start'),

@@ -57,6 +57,10 @@ h1,h2,h3,p{margin:0}
 .i{width:18px;height:18px;flex:none;display:block}
 .num{font-variant-numeric:tabular-nums}
 
+/* janela menor que a página (vidro do Windows): tudo se encaixa no tamanho real */
+body.clamp{width:var(--vw);height:var(--vh);transform:translateZ(0);overflow:hidden}
+html:has(body.clamp){overflow:hidden}
+
 /* ---------- fundo ---------- */
 .bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:var(--base)}
 .bg .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.85;will-change:transform}
@@ -614,6 +618,18 @@ body.desktop[data-mode="light"] .page-head h1,body.desktop[data-mode="light"] .c
 .subtabs{overflow-x:auto;scrollbar-width:none;max-width:calc(100vw - 200px)}
 @media (max-width:760px){.subtabs{max-width:100%}.scroll.app-mode{padding-bottom:96px}.appbar .ellipsis{display:none}}
 
+/* ---------- Spotify (controle) ---------- */
+.sp-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:900px){.sp-grid{grid-template-columns:1fr}}
+.sp-now{display:flex;gap:16px;align-items:flex-start}
+.sp-cover{width:110px;height:110px;border-radius:14px;background:var(--soft) center/cover;flex:none;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.sp-res{margin-top:10px;display:flex;flex-direction:column;gap:2px;max-height:420px;overflow:auto}
+.sp-row{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:12px;width:100%}
+.sp-row:hover{background:var(--soft)}
+.sp-th{width:40px;height:40px;border-radius:8px;background:var(--soft) center/cover;flex:none}
+.menu-i{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:12px;text-align:left;font-size:13.5px}
+.menu-i:hover{background:var(--soft)}
+
 .app{padding-top:max(14px,env(safe-area-inset-top))}
 @media (max-width:760px){.dock{bottom:max(10px,env(safe-area-inset-bottom))}}
 </style>
@@ -641,7 +657,7 @@ body.desktop[data-mode="light"] .page-head h1,body.desktop[data-mode="light"] .c
 <div id="appHost"></div>
 <script>
 const TARGET = 'pwa';
-const ICONS = {"archive": "<rect width=\"20\" height=\"5\" x=\"2\" y=\"3\" rx=\"1\" /> <path d=\"M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8\" /> <path d=\"M10 12h4\" />", "arrow-left": "<path d=\"m12 19-7-7 7-7\" /> <path d=\"M19 12H5\" />", "arrow-right": "<path d=\"M5 12h14\" /> <path d=\"m12 5 7 7-7 7\" />", "arrow-right-left": "<path d=\"m16 3 4 4-4 4\" /> <path d=\"M20 7H4\" /> <path d=\"m8 21-4-4 4-4\" /> <path d=\"M4 17h16\" />", "arrow-up-right": "<path d=\"M7 7h10v10\" /> <path d=\"M7 17 17 7\" />", "banknote": "<rect width=\"20\" height=\"12\" x=\"2\" y=\"6\" rx=\"2\" /> <circle cx=\"12\" cy=\"12\" r=\"2\" /> <path d=\"M6 12h.01M18 12h.01\" />", "bell": "<path d=\"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9\" /> <path d=\"M10.3 21a1.94 1.94 0 0 0 3.4 0\" />", "bell-ring": "<path d=\"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9\" /> <path d=\"M10.3 21a1.94 1.94 0 0 0 3.4 0\" /> <path d=\"M4 2C2.8 3.7 2 5.7 2 8\" /> <path d=\"M22 8c0-2.3-.8-4.3-2-6\" />", "book-open": "<path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\" /> <path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\" />", "bookmark": "<path d=\"m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z\" />", "building-2": "<path d=\"M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z\" /> <path d=\"M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2\" /> <path d=\"M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2\" /> <path d=\"M10 6h4\" /> <path d=\"M10 10h4\" /> <path d=\"M10 14h4\" /> <path d=\"M10 18h4\" />", "calendar": "<path d=\"M8 2v4\" /> <path d=\"M16 2v4\" /> <rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" /> <path d=\"M3 10h18\" />", "calendar-clock": "<path d=\"M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5\" /> <path d=\"M16 2v4\" /> <path d=\"M8 2v4\" /> <path d=\"M3 10h5\" /> <path d=\"M17.5 17.5 16 16.3V14\" /> <circle cx=\"16\" cy=\"16\" r=\"6\" />", "check": "<path d=\"M20 6 9 17l-5-5\" />", "check-check": "<path d=\"M18 6 7 17l-5-5\" /> <path d=\"m22 10-7.5 7.5L13 16\" />", "chevron-down": "<path d=\"m6 9 6 6 6-6\" />", "chevron-left": "<path d=\"m15 18-6-6 6-6\" />", "chevron-right": "<path d=\"m9 18 6-6-6-6\" />", "chevron-up": "<path d=\"m18 15-6-6-6 6\" />", "circle-check": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"m9 12 2 2 4-4\" />", "clock": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <polyline points=\"12 6 12 12 16 14\" />", "cloud": "<path d=\"M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z\" />", "cloud-off": "<path d=\"m2 2 20 20\" /> <path d=\"M5.782 5.782A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.307-.193\" /> <path d=\"M21.532 16.5A4.5 4.5 0 0 0 17.5 10h-1.79A7.008 7.008 0 0 0 10 5.07\" />", "cloud-sun": "<path d=\"M12 2v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"M20 12h2\" /> <path d=\"m19.07 4.93-1.41 1.41\" /> <path d=\"M15.947 12.65a4 4 0 0 0-5.925-4.128\" /> <path d=\"M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z\" />", "copy": "<rect width=\"14\" height=\"14\" x=\"8\" y=\"8\" rx=\"2\" ry=\"2\" /> <path d=\"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2\" />", "corner-down-left": "<polyline points=\"9 10 4 15 9 20\" /> <path d=\"M20 4v7a4 4 0 0 1-4 4H4\" />", "currency": "<circle cx=\"12\" cy=\"12\" r=\"8\" /> <line x1=\"3\" x2=\"6\" y1=\"3\" y2=\"6\" /> <line x1=\"21\" x2=\"18\" y1=\"3\" y2=\"6\" /> <line x1=\"3\" x2=\"6\" y1=\"21\" y2=\"18\" /> <line x1=\"21\" x2=\"18\" y1=\"21\" y2=\"18\" />", "download": "<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /> <polyline points=\"7 10 12 15 17 10\" /> <line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\" />", "droplets": "<path d=\"M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z\" /> <path d=\"M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97\" />", "dumbbell": "<path d=\"M14.4 14.4 9.6 9.6\" /> <path d=\"M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z\" /> <path d=\"m21.5 21.5-1.4-1.4\" /> <path d=\"M3.9 3.9 2.5 2.5\" /> <path d=\"M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z\" />", "external-link": "<path d=\"M15 3h6v6\" /> <path d=\"M10 14 21 3\" /> <path d=\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\" />", "eye": "<path d=\"M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" />", "eye-off": "<path d=\"M9.88 9.88a3 3 0 1 0 4.24 4.24\" /> <path d=\"M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68\" /> <path d=\"M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61\" /> <line x1=\"2\" x2=\"22\" y1=\"2\" y2=\"22\" />", "file-text": "<path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\" /> <path d=\"M14 2v4a2 2 0 0 0 2 2h4\" /> <path d=\"M10 9H8\" /> <path d=\"M16 13H8\" /> <path d=\"M16 17H8\" />", "flame": "<path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z\" />", "gauge": "<path d=\"m12 14 4-4\" /> <path d=\"M3.34 19a10 10 0 1 1 17.32 0\" />", "globe": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\" /> <path d=\"M2 12h20\" />", "graduation-cap": "<path d=\"M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z\" /> <path d=\"M22 10v6\" /> <path d=\"M6 12.5V16a6 3 0 0 0 12 0v-3.5\" />", "grip-vertical": "<circle cx=\"9\" cy=\"12\" r=\"1\" /> <circle cx=\"9\" cy=\"5\" r=\"1\" /> <circle cx=\"9\" cy=\"19\" r=\"1\" /> <circle cx=\"15\" cy=\"12\" r=\"1\" /> <circle cx=\"15\" cy=\"5\" r=\"1\" /> <circle cx=\"15\" cy=\"19\" r=\"1\" />", "house": "<path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\" /> <path d=\"M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\" />", "image": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\" /> <circle cx=\"9\" cy=\"9\" r=\"2\" /> <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\" />", "import": "<path d=\"M12 3v12\" /> <path d=\"m8 11 4 4 4-4\" /> <path d=\"M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4\" />", "info": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"M12 16v-4\" /> <path d=\"M12 8h.01\" />", "instagram": "<rect width=\"20\" height=\"20\" x=\"2\" y=\"2\" rx=\"5\" ry=\"5\" /> <path d=\"M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z\" /> <line x1=\"17.5\" x2=\"17.51\" y1=\"6.5\" y2=\"6.5\" />", "landmark": "<line x1=\"3\" x2=\"21\" y1=\"22\" y2=\"22\" /> <line x1=\"6\" x2=\"6\" y1=\"18\" y2=\"11\" /> <line x1=\"10\" x2=\"10\" y1=\"18\" y2=\"11\" /> <line x1=\"14\" x2=\"14\" y1=\"18\" y2=\"11\" /> <line x1=\"18\" x2=\"18\" y1=\"18\" y2=\"11\" /> <polygon points=\"12 2 20 7 4 7\" />", "layout-grid": "<rect width=\"7\" height=\"7\" x=\"3\" y=\"3\" rx=\"1\" /> <rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\" /> <rect width=\"7\" height=\"7\" x=\"14\" y=\"14\" rx=\"1\" /> <rect width=\"7\" height=\"7\" x=\"3\" y=\"14\" rx=\"1\" />", "link": "<path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\" /> <path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\" />", "list-todo": "<rect x=\"3\" y=\"5\" width=\"6\" height=\"6\" rx=\"1\" /> <path d=\"m3 17 2 2 4-4\" /> <path d=\"M13 6h8\" /> <path d=\"M13 12h8\" /> <path d=\"M13 18h8\" />", "log-out": "<path d=\"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4\" /> <polyline points=\"16 17 21 12 16 7\" /> <line x1=\"21\" x2=\"9\" y1=\"12\" y2=\"12\" />", "mail": "<rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\" /> <path d=\"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7\" />", "message-circle": "<path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\" />", "minus": "<path d=\"M5 12h14\" />", "moon": "<path d=\"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z\" />", "mountain": "<path d=\"m8 3 4 8 5-5 5 15H2L8 3z\" />", "move": "<polyline points=\"5 9 2 12 5 15\" /> <polyline points=\"9 5 12 2 15 5\" /> <polyline points=\"15 19 12 22 9 19\" /> <polyline points=\"19 9 22 12 19 15\" /> <line x1=\"2\" x2=\"22\" y1=\"12\" y2=\"12\" /> <line x1=\"12\" x2=\"12\" y1=\"2\" y2=\"22\" />", "music": "<path d=\"M9 18V5l12-2v13\" /> <circle cx=\"6\" cy=\"18\" r=\"3\" /> <circle cx=\"18\" cy=\"16\" r=\"3\" />", "package": "<path d=\"m7.5 4.27 9 5.15\" /> <path d=\"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z\" /> <path d=\"m3.3 7 8.7 5 8.7-5\" /> <path d=\"M12 22V12\" />", "palette": "<circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\" /> <circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\" /> <circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\" /> <circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\" /> <path d=\"M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z\" />", "paperclip": "<path d=\"m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48\" />", "pause": "<rect x=\"14\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\" /> <rect x=\"6\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\" />", "pencil": "<path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\" /> <path d=\"m15 5 4 4\" />", "phone": "<path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z\" />", "piggy-bank": "<path d=\"M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z\" /> <path d=\"M2 9v1c0 1.1.9 2 2 2h1\" /> <path d=\"M16 11h.01\" />", "play": "<polygon points=\"6 3 20 12 6 21 6 3\" />", "plus": "<path d=\"M5 12h14\" /> <path d=\"M12 5v14\" />", "qr-code": "<rect width=\"5\" height=\"5\" x=\"3\" y=\"3\" rx=\"1\" /> <rect width=\"5\" height=\"5\" x=\"16\" y=\"3\" rx=\"1\" /> <rect width=\"5\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\" /> <path d=\"M21 16h-3a2 2 0 0 0-2 2v3\" /> <path d=\"M21 21v.01\" /> <path d=\"M12 7v3a2 2 0 0 1-2 2H7\" /> <path d=\"M3 12h.01\" /> <path d=\"M12 3h.01\" /> <path d=\"M12 16v.01\" /> <path d=\"M16 12h1\" /> <path d=\"M21 12v.01\" /> <path d=\"M12 21v-1\" />", "receipt": "<path d=\"M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z\" /> <path d=\"M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8\" /> <path d=\"M12 17.5v-11\" />", "refresh-cw": "<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /> <path d=\"M21 3v5h-5\" /> <path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /> <path d=\"M8 16H3v5\" />", "repeat": "<path d=\"m17 2 4 4-4 4\" /> <path d=\"M3 11v-1a4 4 0 0 1 4-4h14\" /> <path d=\"m7 22-4-4 4-4\" /> <path d=\"M21 13v1a4 4 0 0 1-4 4H3\" />", "reply": "<polyline points=\"9 17 4 12 9 7\" /> <path d=\"M20 18v-2a4 4 0 0 0-4-4H4\" />", "rotate-cw": "<path d=\"M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8\" /> <path d=\"M21 3v5h-5\" />", "search": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <path d=\"m21 21-4.3-4.3\" />", "send": "<path d=\"m22 2-7 20-4-9-9-4Z\" /> <path d=\"M22 2 11 13\" />", "settings": "<path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" />", "ship": "<path d=\"M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1\" /> <path d=\"M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76\" /> <path d=\"M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6\" /> <path d=\"M12 10v4\" /> <path d=\"M12 2v3\" />", "skip-back": "<polygon points=\"19 20 9 12 19 4 19 20\" /> <line x1=\"5\" x2=\"5\" y1=\"19\" y2=\"5\" />", "skip-forward": "<polygon points=\"5 4 15 12 5 20 5 4\" /> <line x1=\"19\" x2=\"19\" y1=\"5\" y2=\"19\" />", "sparkles": "<path d=\"M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z\" /> <path d=\"M20 3v4\" /> <path d=\"M22 5h-4\" /> <path d=\"M4 17v2\" /> <path d=\"M5 18H3\" />", "square": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" />", "star": "<polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\" />", "sticky-note": "<path d=\"M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z\" /> <path d=\"M15 3v4a2 2 0 0 0 2 2h4\" />", "store": "<path d=\"m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7\" /> <path d=\"M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8\" /> <path d=\"M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4\" /> <path d=\"M2 7h20\" /> <path d=\"M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7\" />", "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />", "target": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <circle cx=\"12\" cy=\"12\" r=\"6\" /> <circle cx=\"12\" cy=\"12\" r=\"2\" />", "text": "<path d=\"M17 6.1H3\" /> <path d=\"M21 12.1H3\" /> <path d=\"M15.1 18H3\" />", "trash-2": "<path d=\"M3 6h18\" /> <path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\" /> <path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\" /> <line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\" /> <line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\" />", "trending-down": "<polyline points=\"22 17 13.5 8.5 8.5 13.5 2 7\" /> <polyline points=\"16 17 22 17 22 11\" />", "trending-up": "<polyline points=\"22 7 13.5 15.5 8.5 10.5 2 17\" /> <polyline points=\"16 7 22 7 22 13\" />", "truck": "<path d=\"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2\" /> <path d=\"M15 18H9\" /> <path d=\"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14\" /> <circle cx=\"17\" cy=\"18\" r=\"2\" /> <circle cx=\"7\" cy=\"18\" r=\"2\" />", "undo": "<path d=\"M3 7v6h6\" /> <path d=\"M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13\" />", "undo-2": "<path d=\"M9 14 4 9l5-5\" /> <path d=\"M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11\" />", "upload": "<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /> <polyline points=\"17 8 12 3 7 8\" /> <line x1=\"12\" x2=\"12\" y1=\"3\" y2=\"15\" />", "user": "<path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\" /> <circle cx=\"12\" cy=\"7\" r=\"4\" />", "user-plus": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\" /> <circle cx=\"9\" cy=\"7\" r=\"4\" /> <line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\" /> <line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\" />", "users": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\" /> <circle cx=\"9\" cy=\"7\" r=\"4\" /> <path d=\"M22 21v-2a4 4 0 0 0-3-3.87\" /> <path d=\"M16 3.13a4 4 0 0 1 0 7.75\" />", "video": "<path d=\"m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5\" /> <rect x=\"2\" y=\"6\" width=\"14\" height=\"12\" rx=\"2\" />", "wallet": "<path d=\"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1\" /> <path d=\"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4\" />", "wand-sparkles": "<path d=\"m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72\" /> <path d=\"m14 7 3 3\" /> <path d=\"M5 6v4\" /> <path d=\"M19 14v4\" /> <path d=\"M10 2v2\" /> <path d=\"M7 8H3\" /> <path d=\"M21 16h-4\" /> <path d=\"M11 3H9\" />", "x": "<path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" />"};
+const ICONS = {"archive": "<rect width=\"20\" height=\"5\" x=\"2\" y=\"3\" rx=\"1\" /> <path d=\"M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8\" /> <path d=\"M10 12h4\" />", "arrow-left": "<path d=\"m12 19-7-7 7-7\" /> <path d=\"M19 12H5\" />", "arrow-right": "<path d=\"M5 12h14\" /> <path d=\"m12 5 7 7-7 7\" />", "arrow-right-left": "<path d=\"m16 3 4 4-4 4\" /> <path d=\"M20 7H4\" /> <path d=\"m8 21-4-4 4-4\" /> <path d=\"M4 17h16\" />", "arrow-up-right": "<path d=\"M7 7h10v10\" /> <path d=\"M7 17 17 7\" />", "banknote": "<rect width=\"20\" height=\"12\" x=\"2\" y=\"6\" rx=\"2\" /> <circle cx=\"12\" cy=\"12\" r=\"2\" /> <path d=\"M6 12h.01M18 12h.01\" />", "bell": "<path d=\"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9\" /> <path d=\"M10.3 21a1.94 1.94 0 0 0 3.4 0\" />", "bell-ring": "<path d=\"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9\" /> <path d=\"M10.3 21a1.94 1.94 0 0 0 3.4 0\" /> <path d=\"M4 2C2.8 3.7 2 5.7 2 8\" /> <path d=\"M22 8c0-2.3-.8-4.3-2-6\" />", "book-open": "<path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\" /> <path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\" />", "bookmark": "<path d=\"m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z\" />", "building-2": "<path d=\"M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z\" /> <path d=\"M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2\" /> <path d=\"M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2\" /> <path d=\"M10 6h4\" /> <path d=\"M10 10h4\" /> <path d=\"M10 14h4\" /> <path d=\"M10 18h4\" />", "calendar": "<path d=\"M8 2v4\" /> <path d=\"M16 2v4\" /> <rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" /> <path d=\"M3 10h18\" />", "calendar-clock": "<path d=\"M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5\" /> <path d=\"M16 2v4\" /> <path d=\"M8 2v4\" /> <path d=\"M3 10h5\" /> <path d=\"M17.5 17.5 16 16.3V14\" /> <circle cx=\"16\" cy=\"16\" r=\"6\" />", "check": "<path d=\"M20 6 9 17l-5-5\" />", "check-check": "<path d=\"M18 6 7 17l-5-5\" /> <path d=\"m22 10-7.5 7.5L13 16\" />", "chevron-down": "<path d=\"m6 9 6 6 6-6\" />", "chevron-left": "<path d=\"m15 18-6-6 6-6\" />", "chevron-right": "<path d=\"m9 18 6-6-6-6\" />", "chevron-up": "<path d=\"m18 15-6-6-6 6\" />", "circle-check": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"m9 12 2 2 4-4\" />", "clock": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <polyline points=\"12 6 12 12 16 14\" />", "cloud": "<path d=\"M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z\" />", "cloud-off": "<path d=\"m2 2 20 20\" /> <path d=\"M5.782 5.782A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.307-.193\" /> <path d=\"M21.532 16.5A4.5 4.5 0 0 0 17.5 10h-1.79A7.008 7.008 0 0 0 10 5.07\" />", "cloud-sun": "<path d=\"M12 2v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"M20 12h2\" /> <path d=\"m19.07 4.93-1.41 1.41\" /> <path d=\"M15.947 12.65a4 4 0 0 0-5.925-4.128\" /> <path d=\"M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z\" />", "code": "<polyline points=\"16 18 22 12 16 6\" /> <polyline points=\"8 6 2 12 8 18\" />", "copy": "<rect width=\"14\" height=\"14\" x=\"8\" y=\"8\" rx=\"2\" ry=\"2\" /> <path d=\"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2\" />", "corner-down-left": "<polyline points=\"9 10 4 15 9 20\" /> <path d=\"M20 4v7a4 4 0 0 1-4 4H4\" />", "currency": "<circle cx=\"12\" cy=\"12\" r=\"8\" /> <line x1=\"3\" x2=\"6\" y1=\"3\" y2=\"6\" /> <line x1=\"21\" x2=\"18\" y1=\"3\" y2=\"6\" /> <line x1=\"3\" x2=\"6\" y1=\"21\" y2=\"18\" /> <line x1=\"21\" x2=\"18\" y1=\"21\" y2=\"18\" />", "download": "<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /> <polyline points=\"7 10 12 15 17 10\" /> <line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\" />", "droplets": "<path d=\"M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z\" /> <path d=\"M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97\" />", "dumbbell": "<path d=\"M14.4 14.4 9.6 9.6\" /> <path d=\"M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z\" /> <path d=\"m21.5 21.5-1.4-1.4\" /> <path d=\"M3.9 3.9 2.5 2.5\" /> <path d=\"M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z\" />", "external-link": "<path d=\"M15 3h6v6\" /> <path d=\"M10 14 21 3\" /> <path d=\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\" />", "eye": "<path d=\"M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" />", "eye-off": "<path d=\"M9.88 9.88a3 3 0 1 0 4.24 4.24\" /> <path d=\"M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68\" /> <path d=\"M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61\" /> <line x1=\"2\" x2=\"22\" y1=\"2\" y2=\"22\" />", "file-text": "<path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\" /> <path d=\"M14 2v4a2 2 0 0 0 2 2h4\" /> <path d=\"M10 9H8\" /> <path d=\"M16 13H8\" /> <path d=\"M16 17H8\" />", "flame": "<path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z\" />", "gauge": "<path d=\"m12 14 4-4\" /> <path d=\"M3.34 19a10 10 0 1 1 17.32 0\" />", "globe": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\" /> <path d=\"M2 12h20\" />", "graduation-cap": "<path d=\"M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z\" /> <path d=\"M22 10v6\" /> <path d=\"M6 12.5V16a6 3 0 0 0 12 0v-3.5\" />", "grip-vertical": "<circle cx=\"9\" cy=\"12\" r=\"1\" /> <circle cx=\"9\" cy=\"5\" r=\"1\" /> <circle cx=\"9\" cy=\"19\" r=\"1\" /> <circle cx=\"15\" cy=\"12\" r=\"1\" /> <circle cx=\"15\" cy=\"5\" r=\"1\" /> <circle cx=\"15\" cy=\"19\" r=\"1\" />", "house": "<path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\" /> <path d=\"M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\" />", "image": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\" /> <circle cx=\"9\" cy=\"9\" r=\"2\" /> <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\" />", "import": "<path d=\"M12 3v12\" /> <path d=\"m8 11 4 4 4-4\" /> <path d=\"M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4\" />", "info": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"M12 16v-4\" /> <path d=\"M12 8h.01\" />", "instagram": "<rect width=\"20\" height=\"20\" x=\"2\" y=\"2\" rx=\"5\" ry=\"5\" /> <path d=\"M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z\" /> <line x1=\"17.5\" x2=\"17.51\" y1=\"6.5\" y2=\"6.5\" />", "landmark": "<line x1=\"3\" x2=\"21\" y1=\"22\" y2=\"22\" /> <line x1=\"6\" x2=\"6\" y1=\"18\" y2=\"11\" /> <line x1=\"10\" x2=\"10\" y1=\"18\" y2=\"11\" /> <line x1=\"14\" x2=\"14\" y1=\"18\" y2=\"11\" /> <line x1=\"18\" x2=\"18\" y1=\"18\" y2=\"11\" /> <polygon points=\"12 2 20 7 4 7\" />", "layout-grid": "<rect width=\"7\" height=\"7\" x=\"3\" y=\"3\" rx=\"1\" /> <rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\" /> <rect width=\"7\" height=\"7\" x=\"14\" y=\"14\" rx=\"1\" /> <rect width=\"7\" height=\"7\" x=\"3\" y=\"14\" rx=\"1\" />", "link": "<path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\" /> <path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\" />", "list-todo": "<rect x=\"3\" y=\"5\" width=\"6\" height=\"6\" rx=\"1\" /> <path d=\"m3 17 2 2 4-4\" /> <path d=\"M13 6h8\" /> <path d=\"M13 12h8\" /> <path d=\"M13 18h8\" />", "log-out": "<path d=\"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4\" /> <polyline points=\"16 17 21 12 16 7\" /> <line x1=\"21\" x2=\"9\" y1=\"12\" y2=\"12\" />", "mail": "<rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\" /> <path d=\"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7\" />", "message-circle": "<path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\" />", "minus": "<path d=\"M5 12h14\" />", "monitor-speaker": "<path d=\"M5.5 20H8\" /> <path d=\"M17 9h.01\" /> <rect width=\"10\" height=\"16\" x=\"12\" y=\"4\" rx=\"2\" /> <path d=\"M8 6H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h4\" /> <circle cx=\"17\" cy=\"15\" r=\"1\" />", "moon": "<path d=\"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z\" />", "mountain": "<path d=\"m8 3 4 8 5-5 5 15H2L8 3z\" />", "move": "<polyline points=\"5 9 2 12 5 15\" /> <polyline points=\"9 5 12 2 15 5\" /> <polyline points=\"15 19 12 22 9 19\" /> <polyline points=\"19 9 22 12 19 15\" /> <line x1=\"2\" x2=\"22\" y1=\"12\" y2=\"12\" /> <line x1=\"12\" x2=\"12\" y1=\"2\" y2=\"22\" />", "music": "<path d=\"M9 18V5l12-2v13\" /> <circle cx=\"6\" cy=\"18\" r=\"3\" /> <circle cx=\"18\" cy=\"16\" r=\"3\" />", "package": "<path d=\"m7.5 4.27 9 5.15\" /> <path d=\"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z\" /> <path d=\"m3.3 7 8.7 5 8.7-5\" /> <path d=\"M12 22V12\" />", "palette": "<circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\" /> <circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\" /> <circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\" /> <circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\" /> <path d=\"M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z\" />", "paperclip": "<path d=\"m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48\" />", "pause": "<rect x=\"14\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\" /> <rect x=\"6\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\" />", "pencil": "<path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\" /> <path d=\"m15 5 4 4\" />", "phone": "<path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z\" />", "piggy-bank": "<path d=\"M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z\" /> <path d=\"M2 9v1c0 1.1.9 2 2 2h1\" /> <path d=\"M16 11h.01\" />", "play": "<polygon points=\"6 3 20 12 6 21 6 3\" />", "plus": "<path d=\"M5 12h14\" /> <path d=\"M12 5v14\" />", "qr-code": "<rect width=\"5\" height=\"5\" x=\"3\" y=\"3\" rx=\"1\" /> <rect width=\"5\" height=\"5\" x=\"16\" y=\"3\" rx=\"1\" /> <rect width=\"5\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\" /> <path d=\"M21 16h-3a2 2 0 0 0-2 2v3\" /> <path d=\"M21 21v.01\" /> <path d=\"M12 7v3a2 2 0 0 1-2 2H7\" /> <path d=\"M3 12h.01\" /> <path d=\"M12 3h.01\" /> <path d=\"M12 16v.01\" /> <path d=\"M16 12h1\" /> <path d=\"M21 12v.01\" /> <path d=\"M12 21v-1\" />", "receipt": "<path d=\"M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z\" /> <path d=\"M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8\" /> <path d=\"M12 17.5v-11\" />", "refresh-cw": "<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /> <path d=\"M21 3v5h-5\" /> <path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /> <path d=\"M8 16H3v5\" />", "repeat": "<path d=\"m17 2 4 4-4 4\" /> <path d=\"M3 11v-1a4 4 0 0 1 4-4h14\" /> <path d=\"m7 22-4-4 4-4\" /> <path d=\"M21 13v1a4 4 0 0 1-4 4H3\" />", "reply": "<polyline points=\"9 17 4 12 9 7\" /> <path d=\"M20 18v-2a4 4 0 0 0-4-4H4\" />", "rotate-cw": "<path d=\"M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8\" /> <path d=\"M21 3v5h-5\" />", "search": "<circle cx=\"11\" cy=\"11\" r=\"8\" /> <path d=\"m21 21-4.3-4.3\" />", "send": "<path d=\"m22 2-7 20-4-9-9-4Z\" /> <path d=\"M22 2 11 13\" />", "settings": "<path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" />", "ship": "<path d=\"M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1\" /> <path d=\"M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76\" /> <path d=\"M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6\" /> <path d=\"M12 10v4\" /> <path d=\"M12 2v3\" />", "skip-back": "<polygon points=\"19 20 9 12 19 4 19 20\" /> <line x1=\"5\" x2=\"5\" y1=\"19\" y2=\"5\" />", "skip-forward": "<polygon points=\"5 4 15 12 5 20 5 4\" /> <line x1=\"19\" x2=\"19\" y1=\"5\" y2=\"19\" />", "sparkles": "<path d=\"M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z\" /> <path d=\"M20 3v4\" /> <path d=\"M22 5h-4\" /> <path d=\"M4 17v2\" /> <path d=\"M5 18H3\" />", "square": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" />", "star": "<polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\" />", "sticky-note": "<path d=\"M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z\" /> <path d=\"M15 3v4a2 2 0 0 0 2 2h4\" />", "store": "<path d=\"m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7\" /> <path d=\"M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8\" /> <path d=\"M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4\" /> <path d=\"M2 7h20\" /> <path d=\"M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7\" />", "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\" /> <path d=\"M12 2v2\" /> <path d=\"M12 20v2\" /> <path d=\"m4.93 4.93 1.41 1.41\" /> <path d=\"m17.66 17.66 1.41 1.41\" /> <path d=\"M2 12h2\" /> <path d=\"M20 12h2\" /> <path d=\"m6.34 17.66-1.41 1.41\" /> <path d=\"m19.07 4.93-1.41 1.41\" />", "target": "<circle cx=\"12\" cy=\"12\" r=\"10\" /> <circle cx=\"12\" cy=\"12\" r=\"6\" /> <circle cx=\"12\" cy=\"12\" r=\"2\" />", "text": "<path d=\"M17 6.1H3\" /> <path d=\"M21 12.1H3\" /> <path d=\"M15.1 18H3\" />", "trash-2": "<path d=\"M3 6h18\" /> <path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\" /> <path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\" /> <line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\" /> <line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\" />", "trending-down": "<polyline points=\"22 17 13.5 8.5 8.5 13.5 2 7\" /> <polyline points=\"16 17 22 17 22 11\" />", "trending-up": "<polyline points=\"22 7 13.5 15.5 8.5 10.5 2 17\" /> <polyline points=\"16 7 22 7 22 13\" />", "truck": "<path d=\"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2\" /> <path d=\"M15 18H9\" /> <path d=\"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14\" /> <circle cx=\"17\" cy=\"18\" r=\"2\" /> <circle cx=\"7\" cy=\"18\" r=\"2\" />", "undo": "<path d=\"M3 7v6h6\" /> <path d=\"M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13\" />", "undo-2": "<path d=\"M9 14 4 9l5-5\" /> <path d=\"M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11\" />", "upload": "<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /> <polyline points=\"17 8 12 3 7 8\" /> <line x1=\"12\" x2=\"12\" y1=\"3\" y2=\"15\" />", "user": "<path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\" /> <circle cx=\"12\" cy=\"7\" r=\"4\" />", "user-plus": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\" /> <circle cx=\"9\" cy=\"7\" r=\"4\" /> <line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\" /> <line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\" />", "users": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\" /> <circle cx=\"9\" cy=\"7\" r=\"4\" /> <path d=\"M22 21v-2a4 4 0 0 0-3-3.87\" /> <path d=\"M16 3.13a4 4 0 0 1 0 7.75\" />", "video": "<path d=\"m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5\" /> <rect x=\"2\" y=\"6\" width=\"14\" height=\"12\" rx=\"2\" />", "volume-2": "<polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\" /> <path d=\"M15.54 8.46a5 5 0 0 1 0 7.07\" /> <path d=\"M19.07 4.93a10 10 0 0 1 0 14.14\" />", "wallet": "<path d=\"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1\" /> <path d=\"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4\" />", "wand-sparkles": "<path d=\"m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72\" /> <path d=\"m14 7 3 3\" /> <path d=\"M5 6v4\" /> <path d=\"M19 14v4\" /> <path d=\"M10 2v2\" /> <path d=\"M7 8H3\" /> <path d=\"M21 16h-4\" /> <path d=\"M11 3H9\" />", "x": "<path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" />"};
 /* Today: protótipo do painel pessoal. Tudo roda no navegador com dados de exemplo. */
 (function(){
 'use strict';
@@ -749,6 +765,7 @@ function subList(page){
 }
 const SUBS = {
   ia:         [['chat','Assistente']],
+  musica:     [['player','Controle']],
   agenda:     [['mes','Mês'],['lembretes','Lembretes']],
   mensagens:  [['todas','Todas'],['wa','WhatsApp'],['mail','E-mail']],
   pagamentos: [['apagar','A pagar'],['pagas','Pagas'],['pix','Pix']],
@@ -784,7 +801,7 @@ function defaults(){
   );
   return {
     mode:'dark', bg:{type:'grad',preset:'aurora'}, ai:'claude', page:'inicio', sub:{}, warn10:true,
-    biz:'Fire Taste', appsOff:[], glass:70,
+    biz:'Fire Taste', appsOff:[], spCid:'a0efd83401434efca99b95a85d602383', glass:70,
     bar:defaultBar(), wsList:[{id:'w1',name:'Pessoal',color:WS_COLORS[0]}], ws:'w1', wsData:{},
     events: ev,
     tasks: [
@@ -924,6 +941,7 @@ function migrate(o){
   const d = defaults();
   for(const k in d) if(!(k in o)) o[k] = d[k];
   o.tx.forEach(t => { if(!t.wallet) t.wallet = t.kind==='in' && t.cat==='Fire Taste' ? 'caixa' : 'banco'; });
+  if(!o.spCid) o.spCid = 'a0efd83401434efca99b95a85d602383';
   o.bar = normBar(o.bar);
   o.glass = Number.isFinite(+o.glass) ? Math.min(100, Math.max(0, Math.round(+o.glass))) : 70;
   if(!Array.isArray(o.wsList) || !o.wsList.length) o.wsList = [{id:'w1',name:'Pessoal',color:WS_COLORS[0]}];
@@ -944,7 +962,7 @@ S = migrate(load() || defaults());
 /* ================= sincronização (conta Claude) ================= */
 const LOCAL_KEYS = ['page','sub','sel','music','fired','_at','barOpen'];
 /* o que NÃO pertence a uma empresa (vale para a conta toda) */
-const GLOBAL_KEYS = ['mode','bg','ai','warn10','glass','bar','wsList','ws','wsData','page','sub','sel','music','fired','_at','barOpen'];
+const GLOBAL_KEYS = ['spCid','mode','bg','ai','warn10','glass','bar','wsList','ws','wsData','page','sub','sel','music','fired','_at','barOpen'];
 let DOCREF = null, cloudSet = null, DL = null, syncState = 'local', lastJson = null, writing = false, dirty = false, syncTimer = null, applying = false;
 const DEVICE = (() => { try{ let d = localStorage.getItem('today-device'); if(!d){ d = uid()+uid(); localStorage.setItem('today-device', d); } return d; }catch(e){ return uid()+uid(); } })();
 function payloadJson(){
@@ -1336,12 +1354,18 @@ function pInicio(){
     </section>
 
     <section class="card player lift r2">
-      <div class="card-h"><div><h3>Música</h3><div class="sub">Spotify · prévia</div></div><button class="link" data-go="musica">${ic('arrow-up-right')}</button></div>
-      <div class="art"></div>
+      <div class="card-h"><div><h3>Música</h3><div class="sub">${spOn()&&SPS&&!SPS.idle?'Spotify · tocando agora':'Spotify'}</div></div><button class="link" data-go="musica">${ic('arrow-up-right')}</button></div>
+      ${spOn()&&SPS&&!SPS.idle ? `<div class="art" style="background-image:url('${esc(SPS.img)}');background-size:cover"></div>
+      <div style="margin-top:14px"><b>${esc(SPS.name)}</b><div class="small muted">${esc(SPS.artist)}</div></div>
+      <div class="bar" style="margin-top:12px"><i id="mBar" style="width:${SPS.len?spPosNow()/SPS.len*100:0}%"></i></div>
+      <div class="row between small muted num" style="margin-top:5px"><span id="mPos">${mmss(Math.floor(spPosNow()/1000))}</span><span>${mmss(Math.floor(SPS.len/1000))}</span></div>
+      <div class="pctrl"><button data-act="sp-prev" aria-label="Anterior">${ic('skip-back')}</button><button class="play" data-act="sp-play" aria-label="${SPS.playing?'Pausar':'Tocar'}">${ic(SPS.playing?'pause':'play')}</button><button data-act="sp-next" aria-label="Próxima">${ic('skip-forward')}</button></div>`
+      : spOn() ? `<div class="empty" style="margin-top:10px">Nada tocando agora. Abra o Spotify em um aparelho.</div>` : `<div class="art"></div>
       <div style="margin-top:14px"><b id="mTitle">${tr.t}</b><div class="small muted">${tr.a}</div></div>
       <div class="bar" style="margin-top:12px"><i id="mBar" style="width:${S.music.pos/tr.len*100}%"></i></div>
       <div class="row between small muted num" style="margin-top:5px"><span id="mPos">${mmss(S.music.pos)}</span><span>${mmss(tr.len)}</span></div>
       <div class="pctrl"><button data-act="m-prev" aria-label="Anterior">${ic('skip-back')}</button><button class="play" data-act="m-play" aria-label="${S.music.playing?'Pausar':'Tocar'}">${ic(S.music.playing?'pause':'play')}</button><button data-act="m-next" aria-label="Próxima">${ic('skip-forward')}</button></div>
+      ${S.spCid?`<button class="btn sm" style="margin-top:10px" data-go="musica">${ic('music')}Conectar o Spotify</button>`:''}`}
     </section>
 
     <section class="card lift">
@@ -1373,6 +1397,137 @@ function avatar(c, size=38){
 }
 const lastText = c => { const m = c.msgs.at(-1); return c.ch==='mail' ? (c.subject||'') : (m.who?m.who+': ':'') + (m.t||''); };
 
+/* ---------- Spotify: controle pela API oficial (PKCE, sem chave secreta) ---------- */
+const SP_KEY = 'today-spotify-v1', SP_PK = 'today-sp-pkce';
+const SP_SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing';
+let SPT = (() => { try{ return JSON.parse(localStorage.getItem(SP_KEY)||'{}') || {}; }catch(e){ return {}; } })();
+const spSave = () => { try{ localStorage.setItem(SP_KEY, JSON.stringify(SPT)); }catch(e){} };
+const spRedirect = () => location.origin + location.pathname.replace(/index\.html$/,'');
+const spOn = () => !!(SPT.access || SPT.refresh);
+let spLast = 0, SPS = null, spPolling = false, spSig = '', spDevs = [], spRes = null;
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+async function spLogin(){
+  const cid = S.spCid; if(!cid){ toast('Cole o ID do cliente do Spotify primeiro','x'); return; }
+  const ver = b64u(crypto.getRandomValues(new Uint8Array(48)));
+  const chal = b64u(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ver)));
+  const st = 'sp' + b64u(crypto.getRandomValues(new Uint8Array(9)));
+  const ret = spRedirect();
+  try{ localStorage.setItem(SP_PK, JSON.stringify({ver, st, ret, cid})); }catch(e){}
+  const url = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({client_id:cid, response_type:'code', redirect_uri:ret, scope:SP_SCOPES, code_challenge_method:'S256', code_challenge:chal, state:st});
+  if(DESKTOP) window.open(url, 'spotify-auth', 'width=480,height=720'); else location.href = url;
+}
+const spIsReturn = () => /[?&]state=sp/.test(location.search);
+async function spHandleReturn(){
+  const q = new URLSearchParams(location.search), code = q.get('code'), st = q.get('state');
+  let p = {}; try{ p = JSON.parse(localStorage.getItem(SP_PK)||'{}'); }catch(e){}
+  if(!code || !p.ver || st!==p.st) return false;
+  try{
+    const r = await fetch('https://accounts.spotify.com/api/token', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams({client_id:p.cid, grant_type:'authorization_code', code, redirect_uri:p.ret, code_verifier:p.ver})});
+    const j = await r.json(); if(!r.ok || !j.access_token) return false;
+    SPT = {access:j.access_token, refresh:j.refresh_token, exp:Date.now()+(j.expires_in||3600)*1000-30000}; spSave();
+    try{ localStorage.removeItem(SP_PK); }catch(e){}
+    return true;
+  }catch(e){ return false; }
+}
+async function spTok(){
+  if(SPT.access && Date.now() < SPT.exp) return SPT.access;
+  if(!SPT.refresh || !S.spCid) return null;
+  try{
+    const r = await fetch('https://accounts.spotify.com/api/token', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams({client_id:S.spCid, grant_type:'refresh_token', refresh_token:SPT.refresh})});
+    const j = await r.json();
+    if(!r.ok || !j.access_token){ if(r.status===400||r.status===401){ SPT = {}; spSave(); } return null; }
+    SPT = {access:j.access_token, refresh:j.refresh_token||SPT.refresh, exp:Date.now()+(j.expires_in||3600)*1000-30000}; spSave();
+    return SPT.access;
+  }catch(e){ return null; }
+}
+async function spApi(method, path, body){
+  const t = await spTok(); if(!t) return {status:401};
+  try{
+    const r = await fetch('https://api.spotify.com/v1'+path, {method, headers:Object.assign({Authorization:'Bearer '+t}, body?{'Content-Type':'application/json'}:{}), body:body?JSON.stringify(body):undefined});
+    let j = null; if(r.status!==204){ try{ j = await r.json(); }catch(e){} }
+    return {status:r.status, j};
+  }catch(e){ return {status:0}; }
+}
+function spMsg(r){
+  if(r.status===404) return 'Nenhum aparelho com Spotify aberto. Abra o Spotify no PC ou no celular e tente de novo.';
+  if(r.status===403) return 'O Spotify recusou. Confira se a conta é Premium e se o seu e-mail está em Users and Access no painel do app.';
+  if(r.status===401) return 'Conecte o Spotify de novo.';
+  if(r.status===429) return 'Spotify pediu para esperar um pouco.';
+  return 'Não consegui falar com o Spotify.';
+}
+async function spPoll(){
+  if(spPolling || !spOn() || document.hidden || Date.now()-spLast < 2500) return;
+  spPolling = true; spLast = Date.now();
+  try{
+    const r = await spApi('GET', '/me/player');
+    if(r.status===200 && r.j){
+      const it = r.j.item || {}, im = (it.album && it.album.images || it.images || []);
+      SPS = {id:it.id||'', name:it.name||'', artist:(it.artists||[]).map(a=>a.name).join(', ') || (it.show&&it.show.name) || '', img:(im[1]||im[0]||{}).url||'', playing:!!r.j.is_playing, pos:r.j.progress_ms||0, len:it.duration_ms||0, vol:r.j.device&&r.j.device.volume_percent, dev:r.j.device&&r.j.device.name||'', at:Date.now()};
+    } else if(r.status===204){ SPS = {idle:true}; }
+    else if(r.status===401){ SPS = null; }
+    else if(r.status===403 || r.status===429){ /* mantém o último estado */ }
+    updSp();
+  } finally { spPolling = false; }
+}
+const spSigOf = () => SPS ? [SPS.id, SPS.playing, SPS.dev, SPS.idle].join('|') : 'x';
+const spPosNow = () => !SPS || SPS.idle ? 0 : Math.min(SPS.len, SPS.pos + (SPS.playing ? Date.now()-SPS.at : 0));
+function updSp(){
+  const sig = spSigOf(); const changed = sig!==spSig; spSig = sig;
+  const n = $('#spNow'); if(n && changed){ n.innerHTML = spNowHtml(); }
+  if(changed && S.page==='inicio') render();
+}
+function spNowHtml(){
+  if(!SPS || SPS.idle) return `<div class="empty">Nada tocando agora. Abra o Spotify em um aparelho, ou escolha uma música na busca.</div><div class="row" style="justify-content:center;margin-top:10px"><button class="btn sm" data-act="sp-dev">${ic('monitor-speaker')}Escolher aparelho</button></div>`;
+  const p = spPosNow();
+  return `<div class="sp-now"><div class="sp-cover" style="background-image:url('${esc(SPS.img)}')"></div><div class="grow" style="min-width:0"><b class="ellipsis" style="display:block;font-size:17px">${esc(SPS.name)}</b><div class="small muted ellipsis">${esc(SPS.artist)}</div>
+    <div class="bar" style="margin-top:14px"><i id="spBar" style="width:${SPS.len?p/SPS.len*100:0}%"></i></div>
+    <div class="row between small muted num" style="margin-top:5px"><span id="spPos">${mmss(Math.floor(p/1000))}</span><span>${mmss(Math.floor(SPS.len/1000))}</span></div>
+    <div class="pctrl" style="justify-content:flex-start"><button data-act="sp-prev" aria-label="Anterior">${ic('skip-back')}</button><button class="play" data-act="sp-play" aria-label="${SPS.playing?'Pausar':'Tocar'}">${ic(SPS.playing?'pause':'play')}</button><button data-act="sp-next" aria-label="Próxima">${ic('skip-forward')}</button></div>
+    <div class="row" style="gap:10px;margin-top:12px">${ic('volume-2')}<input type="range" class="range" id="spVol" min="0" max="100" value="${SPS.vol==null?50:SPS.vol}" aria-label="Volume" style="flex:1"/><button class="btn sm ghost" data-act="sp-dev">${ic('monitor-speaker')}${esc(SPS.dev||'Aparelho')}</button></div></div></div>`;
+}
+function pSpotify(){
+  const top = head('Spotify', 'Controle o Spotify daqui. O som toca no aparelho em que o Spotify estiver aberto.');
+  if(!S.spCid) return top + `<section class="card" style="max-width:640px"><div class="card-h"><h3>Conectar o Spotify</h3></div>
+    <ol class="small" style="line-height:1.75;margin:0 0 14px 18px;color:var(--ink-2)"><li>Abra developer.spotify.com/dashboard e crie um app chamado Today.</li><li>Em Redirect URI coloque <b>${esc(spRedirect())}</b> e marque Web API.</li><li>Em Settings, copie o Client ID e cole aqui.</li></ol>
+    <form id="spCidForm" class="row" style="gap:8px" autocomplete="off"><label for="spCid" style="position:absolute;left:-9999px">ID do cliente</label><input id="spCid" required placeholder="Client ID do Spotify" style="flex:1"/><button class="btn primary">Salvar</button></form></section>`;
+  if(!spOn()) return top + `<section class="card" style="max-width:640px"><div class="card-h"><h3>Conectar o Spotify</h3></div><p class="small muted" style="margin-bottom:12px">Vai abrir o Spotify para você autorizar o Today. Precisa de conta Premium para controlar a música.</p><div class="row" style="gap:8px"><button class="btn primary" data-act="sp-login">${ic('music')}Conectar ao Spotify</button><button class="btn ghost" data-act="sp-cid-reset">Trocar o ID do cliente</button></div></section>`;
+  const rs = spRes ? spResHtml() : '<div class="empty">Busque uma música ou playlist.</div>';
+  return top + `<div class="sp-grid"><section class="card" id="spNow">${spNowHtml()}</section>
+    <section class="card"><form id="spSearch" class="search" autocomplete="off">${ic('search')}<label for="spQ" style="position:absolute;left:-9999px">Buscar no Spotify</label><input id="spQ" placeholder="Buscar música ou playlist"/></form><div id="spRes" class="sp-res">${rs}</div></section></div>
+    <div style="margin-top:14px"><button class="btn sm ghost" data-act="sp-logout">${ic('log-out')}Desconectar o Spotify</button></div>`;
+}
+function spResHtml(){
+  if(!spRes.length) return '<div class="empty">Nada encontrado.</div>';
+  return spRes.map((x,i) => `<button class="sp-row" data-act="sp-playuri" data-i="${i}"><span class="sp-th" style="background-image:url('${esc(x.img)}')"></span><span class="grow" style="min-width:0;text-align:left"><b class="ellipsis" style="display:block;font-size:13.5px">${esc(x.name)}</b><span class="small muted ellipsis" style="display:block">${esc(x.sub)}</span></span>${ic('play')}</button>`).join('');
+}
+async function spCmd(method, path, body, optimistic){
+  const r = await spApi(method, path, body);
+  if(r.status>=200 && r.status<300){ if(optimistic) optimistic(); setTimeout(spPoll, 500); return true; }
+  toast(spMsg(r), 'x'); return false;
+}
+async function spSearch(q){
+  const r = await spApi('GET', '/search?'+new URLSearchParams({q, type:'track,playlist', limit:'8'}));
+  if(r.status!==200 || !r.j){ toast(spMsg(r), 'x'); return; }
+  const tr = ((r.j.tracks||{}).items||[]).filter(Boolean).map(t => ({uri:t.uri, ctx:false, name:t.name, sub:(t.artists||[]).map(a=>a.name).join(', '), img:((t.album&&t.album.images)||[]).slice(-1)[0]?.url||''}));
+  const pl = ((r.j.playlists||{}).items||[]).filter(Boolean).map(t => ({uri:t.uri, ctx:true, name:t.name, sub:'Playlist', img:((t.images||[])[0]||{}).url||''}));
+  spRes = tr.concat(pl);
+  const el = $('#spRes'); if(el) el.innerHTML = spResHtml();
+}
+async function spDevices(anchor){
+  const r = await spApi('GET', '/me/player/devices');
+  if(r.status!==200){ toast(spMsg(r), 'x'); return; }
+  spDevs = (r.j&&r.j.devices)||[];
+  openPop(anchor, `<h4>Aparelhos</h4>${spDevs.length ? spDevs.map((d,i)=>`<button class="menu-i" data-act="sp-setdev" data-i="${i}">${ic('monitor-speaker')}<span class="grow">${esc(d.name)}</span>${d.is_active?'<span class="pill ok"><span class="d"></span>Ativo</span>':''}</button>`).join('') : '<div class="small muted" style="padding:8px">Nenhum aparelho com Spotify aberto. Abra o Spotify no PC ou no celular.</div>'}`, 300);
+}
+let spVolT = 0;
+document.addEventListener('input', e => { if(e.target && e.target.id==='spVol'){ clearTimeout(spVolT); const v = Math.round(+e.target.value); spVolT = setTimeout(() => spCmd('PUT', '/me/player/volume?volume_percent='+v), 250); } });
+setInterval(() => { if(spOn() && (S.page==='inicio' || (S.page==='musica' && sub()==='player'))) spPoll(); }, 4000);
+setInterval(() => {
+  if(!SPS || SPS.idle || !SPS.playing) return;
+  const p = spPosNow(), b = $('#spBar'), t = $('#spPos'); if(b && SPS.len) b.style.width = (p/SPS.len*100)+'%'; if(t) t.textContent = mmss(Math.floor(p/1000));
+  const hb = $('#mBar'); if(hb && spOn() && SPS.len) hb.style.width = (p/SPS.len*100)+'%'; const hp = $('#mPos'); if(hp && spOn()) hp.textContent = mmss(Math.floor(p/1000));
+}, 1000);
+
 /* ---------- apps integrados: página e webviews persistentes ---------- */
 const WV = {};
 let appRO = null;
@@ -1387,7 +1542,7 @@ function appPage(a){
 function pMusica(){
   const ap = curApp();
   if(ap) return appPage(ap);
-  return head('Música', 'Seus apps de música dentro do Today.') + `<div class="card"><div class="empty">Nenhum app de música ligado. Ligue Spotify, YouTube Music ou Deezer em Ajustes, em Apps integrados.</div></div>`;
+  return pSpotify();
 }
 function wvHide(w){ Object.assign(w.style,{visibility:'hidden',pointerEvents:'none',width:'1px',height:'1px',left:'0px',top:'0px'}); }
 function placeWv(w, slot){ const r = slot.getBoundingClientRect(); Object.assign(w.style,{visibility:'visible',pointerEvents:'auto',left:r.left+'px',top:r.top+'px',width:Math.max(1,r.width)+'px',height:Math.max(1,r.height)+'px'}); }
@@ -1800,7 +1955,7 @@ function pAjustes(){
     ${barCard()}
     ${appsCard()}
     <section class="card"><div class="card-h"><h3>IAs</h3><span class="small muted">Precisam de chave de API</span></div>${AIS.map(a=>`<div class="row" style="padding:7px 0">${aiDot(a,1).replace('ai-dot"','ai-dot" ').replace('style="','style="width:30px;height:30px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;')}<div class="grow"><b style="font-size:13px">${a.name}</b><div class="small muted">${a.by}</div></div>${S.ai===a.id?'<span class="pill ok"><span class="d"></span>Em uso</span>':`<button class="btn sm" data-act="set-ai" data-id="${a.id}">Usar</button>`}</div>`).join('')}</section>
-    <section class="card"><div class="card-h"><h3>Conexões</h3><span class="pill">Próxima fase</span></div>${integ.map(([n,i,w])=>`<div class="row" style="padding:7px 0"><div class="ico">${ic(i)}</div><div class="grow"><b style="font-size:13px">${n}</b><div class="small muted">${w}</div></div><span class="pill">Não conectado</span></div>`).join('')}</section>
+    <section class="card"><div class="card-h"><h3>Conexões</h3><span class="pill">Próxima fase</span></div>${integ.map(([n,i,w])=>`<div class="row" style="padding:7px 0"><div class="ico">${ic(i)}</div><div class="grow"><b style="font-size:13px">${n}</b><div class="small muted">${w}</div></div>${n==='Spotify'&&spOn()?'<span class="pill ok"><span class="d"></span>Conectado</span>':'<span class="pill">Não conectado</span>'}</div>`).join('')}</section>
     <section class="card"><div class="card-h"><h3>Dados e sincronização</h3><span class="pill ${syncState==='ok'?'ok':syncState==='error'||syncState==='slow'?'crit':''}">${{local:'Só neste aparelho',loading:'Conectando',saving:'Salvando',ok:'Sincronizado',slow:'Sem conexão',error:'Erro'}[syncState]}</span></div>
       <p class="small muted" style="margin-bottom:12px">${TARGET==='pwa' ? (sbUser?`Conectado como <b style="color:var(--ink)">${esc(sbUser.email)}</b>. Tudo fica salvo na sua conta e aparece igual em todos os aparelhos. A foto de fundo fica só no aparelho onde você enviou.`:'Entre na sua conta para sincronizar.') : (cloudSet?'Tudo fica salvo na sua conta do Claude e aparece igual no PC e no celular. A foto de fundo fica só no aparelho onde você enviou.':'Agora os dados ficam só neste navegador. Abra o Today pelo link do Claude, com a sua conta, para sincronizar entre PC e celular.')}</p>
       <div class="row" style="flex-wrap:wrap;gap:8px;margin-bottom:14px"><button class="btn" data-act="export">${ic('download')}Exportar dados</button><label class="btn" style="cursor:pointer"><input type="file" accept=".json,application/json" data-act="import" style="display:none"/>${ic('upload')}Importar dados</label>${TARGET==='pwa'&&sbUser?`<button class="btn" data-act="logout">${ic('log-out')}Sair da conta</button>`:''}</div>
@@ -1831,6 +1986,7 @@ function render(keepScroll=true){
   sc.scrollTop = (keepScroll && lastPage===S.page) ? y : 0;
   lastPage = S.page;
   sc.classList.toggle('app-mode', !!sc.querySelector('.appview'));
+  if(spOn() && ((S.page==='musica' && sub()==='player') || S.page==='inicio')) spPoll();
   mountApps();
   const m1 = $('#aiMsgs'); if(m1) m1.scrollTop = m1.scrollHeight;
   const m2 = $('#waMsgs'); if(m2) m2.scrollTop = m2.scrollHeight;
@@ -1869,6 +2025,26 @@ function notify(text, icon='bell-ring'){
   S.notifs.unshift({id:uid(),icon,t:text,at:hhmm(new Date()),read:false});
   S.notifs = S.notifs.slice(0,30);
   toast(text, icon); renderTop(); save();
+}
+
+/* ================= janela: o Today acompanha o tamanho real dela ================= */
+let winSz = null;
+function fitWin(){
+  const b = document.body, r = document.documentElement;
+  let w = 0, h = 0;
+  if(winSz){ w = winSz[0]; h = winSz[1]; }
+  else if(outerWidth > 300){ w = outerWidth - 16; h = outerHeight - 16; }
+  const bad = w > 300 && h > 300 && (innerWidth > w + 6 || innerHeight > h + 6);
+  if(bad){
+    r.style.setProperty('--vw', Math.min(innerWidth, w)+'px'); r.style.setProperty('--vh', Math.min(innerHeight, h)+'px');
+    if(!b.classList.contains('clamp')){ b.classList.add('clamp'); }
+  } else if(b.classList.contains('clamp')){ b.classList.remove('clamp'); }
+  if(bad || b.classList.contains('clamp')) mountSoon && mountSoon();
+}
+function fitWinInit(){
+  const td = window.todayDesktop;
+  if(td && td.onWinSize) td.onWinSize((w,h) => { winSz = [w,h]; fitWin(); });
+  addEventListener('resize', fitWin); setInterval(fitWin, 800); fitWin();
 }
 
 /* ================= popovers ================= */
@@ -2278,6 +2454,15 @@ document.addEventListener('click', e => {
     case 'welcome-empty': startWith(emptyState()); toast('Tudo vazio. Comece pelo + embaixo.','layout-grid'); break;
     case 'palette': openPalette(); break;
     case 'app-nav': appNav(a.dataset.n); break;
+    case 'sp-login': spLogin(); break;
+    case 'sp-logout': SPT = {}; spSave(); SPS = null; spRes = null; spSig = ''; render(); break;
+    case 'sp-cid-reset': S.spCid = ''; render(); break;
+    case 'sp-play': spCmd('PUT', SPS && SPS.playing ? '/me/player/pause' : '/me/player/play', null, () => { if(SPS){ SPS.playing = !SPS.playing; SPS.pos = spPosNow(); SPS.at = Date.now(); updSp(); } }); break;
+    case 'sp-next': spCmd('POST', '/me/player/next'); break;
+    case 'sp-prev': spCmd('POST', '/me/player/previous'); break;
+    case 'sp-dev': spDevices(a); break;
+    case 'sp-setdev': { const d = spDevs[+a.dataset.i]; closePop(); if(d) spCmd('PUT', '/me/player', {device_ids:[d.id], play:true}); break; }
+    case 'sp-playuri': { const x = spRes && spRes[+a.dataset.i]; if(x) spCmd('PUT', '/me/player/play', x.ctx ? {context_uri:x.uri} : {uris:[x.uri]}); break; }
     case 'app-toggle': { const on = a.dataset.v==='1'; S.appsOff = (S.appsOff||[]).filter(x=>x!==id); if(!on) S.appsOff.push(id); render(); break; }
     case 'pal': runPal(+a.dataset.i); break;
     case 'transfer': formTransfer(); break;
@@ -2307,6 +2492,8 @@ document.addEventListener('submit', e => {
   e.preventDefault();
   const f = e.target;
   if(f.id==='cmdForm'){ const i = $('#cmdIn'); runCommand(i.value); i.value=''; return; }
+  if(f.id==='spCidForm'){ const v = ($('#spCid').value||'').trim(); if(/^[0-9a-f]{32}$/i.test(v)){ S.spCid = v; render(); } else toast('O ID do cliente tem 32 letras e números.','x'); return; }
+  if(f.id==='spSearch'){ const q = ($('#spQ').value||'').trim(); if(q) spSearch(q); return; }
   if(f.id==='aiForm'){ const i = $('#aiIn'), t = i.value.trim(); if(!t) return; const th = S.aiThreads[S.ai] = S.aiThreads[S.ai]||[]; th.push({me:1,t}); th.push({me:0,t:aiReply(t)}); render(); $('#aiIn')?.focus(); return; }
   if(f.id==='waForm'){ const t = $('#waIn').value.trim(); if(t) sendWa(t); return; }
   if(f.id==='pixForm'){ const v = money($('#pxVal').value); if(!v){ toast('Digite um valor maior que zero','info'); return; } formPix(null, $('#pxKey').value, v, $('#pxDesc').value || 'Pix'); return; }
@@ -2628,18 +2815,23 @@ if(BARWIN){
   addEventListener('storage', e => { if(e.key===KEY || e.key===null) renderFloat(); });
 }
 
+addEventListener('storage', e => { if(e.key===SP_KEY){ try{ SPT = JSON.parse(e.newValue||'{}')||{}; }catch(_){ SPT = {}; } if(!BARWIN){ spSig=''; render(); } } });
+
 /* ================= início ================= */
 if(DESKTOP){ document.documentElement.classList.add('desktop'); document.body.classList.add('desktop'); }
 if(BARWIN){
   document.documentElement.classList.add('barwin'); document.body.classList.add('barwin');
   renderFloat(); setInterval(renderFloat, 60000);
+} else if(spIsReturn()){
+  /* volta do login do Spotify: guarda o token; na janelinha do programa fecha, no navegador recarrega limpo */
+  spHandleReturn().then(() => { if(window.opener){ try{ window.close(); }catch(e){} } else location.replace(location.pathname + location.hash); });
 } else {
   document.body.dataset.mode = S.mode;
   const h0 = location.hash.slice(1); if(h0 && PAGES[h0]) S.page = h0;
   renderBg(); renderTop(); render(false);
   setInterval(tick, 1000);
   if(DESKTOP && window.todayDesktop && window.todayDesktop.onGoto) window.todayDesktop.onGoto(id => { if(id && PAGES[id]) go(id); });
-  if(DESKTOP){ renderWinbar(); if(window.todayDesktop && window.todayDesktop.onWinState) window.todayDesktop.onWinState(m => { winMax = !!m; document.body.classList.toggle('max', winMax); renderWinbar(); }); }
+  if(DESKTOP){ fitWinInit(); renderWinbar(); if(window.todayDesktop && window.todayDesktop.onWinState) window.todayDesktop.onWinState(m => { winMax = !!m; document.body.classList.toggle('max', winMax); renderWinbar(); }); }
   if(TARGET==='pwa') initPwa(); else initCloud();
   let lastW = innerWidth; addEventListener('resize', () => { if((lastW<=760) !== (innerWidth<=760)){ lastW = innerWidth; render(); } });
 }
