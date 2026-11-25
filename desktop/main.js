@@ -1,7 +1,7 @@
 // Today para Windows: abre o app em uma janela de vidro (acrílico do Windows 11),
 // mostrando a área de trabalho desfocada atrás. O conteúdo vem do site no GitHub Pages,
 // então login, sincronização e atualizações são os mesmos do app web.
-const { app, BrowserWindow, ipcMain, nativeTheme, shell, Menu, screen, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, nativeTheme, shell, Menu, screen, Tray, nativeImage, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -128,7 +128,16 @@ function createWindow() {
       sandbox: true,
       spellcheck: true,
       backgroundThrottling: false,
+      webviewTag: true, // apps integrados (Spotify, Gmail, WhatsApp...) abrem dentro do Today
     },
+  });
+
+  // Só deixa o Today criar webviews de apps https com sessão própria (persist:today-...), sem acesso ao sistema
+  win.webContents.on('will-attach-webview', (e, webPreferences, params) => {
+    delete webPreferences.preload; delete webPreferences.preloadURL;
+    webPreferences.nodeIntegration = false; webPreferences.nodeIntegrationInSubFrames = false;
+    webPreferences.contextIsolation = true; webPreferences.sandbox = true; webPreferences.webSecurity = true;
+    if (!/^persist:today-[\w-]+$/.test(String(params.partition || '')) || !/^https:\/\//.test(String(params.src || ''))) e.preventDefault();
   });
 
   Menu.setApplicationMenu(null);
@@ -270,6 +279,45 @@ if (!single) app.quit();
 else {
   app.on('second-instance', () => restoreMain());
   app.on('before-quit', () => { quitting = true; });
-  app.whenReady().then(() => { createWindow(); createTray(); });
+  
+// ---- apps integrados ----
+const AUTH_HOST = /(^|\.)(accounts\.google\.com|accounts\.youtube\.com|login\.live\.com|login\.microsoftonline\.com|login\.microsoft\.com|appleid\.apple\.com|facebook\.com|accounts\.spotify\.com|auth\.openai\.com|auth0\.com|x\.com|twitter\.com|github\.com|instagram\.com|deezer\.com|account\.microsoft\.com|openai\.com|chatgpt\.com|grok\.com|claude\.ai)$/i;
+const PERMS = new Set(['media', 'notifications', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen', 'mediaKeySystem', 'audioCapture', 'videoCapture', 'display-capture']);
+const wvSessions = new WeakSet();
+app.on('web-contents-created', (_e, wc) => {
+  if (wc.getType() !== 'webview') return;
+  // Navegador "comum" para os sites aceitarem o login (sem Electron/Today no identificador)
+  const ua = wc.getUserAgent().replace(/\s*Electron\/\S+/i, '').replace(/\s*[Tt]oday[\w-]*\/\S+/g, '');
+  wc.setUserAgent(ua);
+  const ses = wc.session;
+  if (!wvSessions.has(ses)) {
+    wvSessions.add(ses);
+    ses.setUserAgent(ua);
+    ses.setPermissionRequestHandler((_w, perm, cb) => cb(PERMS.has(perm)));
+    ses.setPermissionCheckHandler((_w, perm) => PERMS.has(perm));
+  }
+  wc.setWindowOpenHandler(({ url }) => {
+    let host = '';
+    try { host = new URL(url).hostname; } catch (e) { return { action: 'deny' }; }
+    if (!/^https:/.test(url)) return { action: 'deny' };
+    // janelas de login (Google, Microsoft, Apple...) abrem numa janelinha; o resto vai para o navegador
+    if (AUTH_HOST.test(host) || /oauth|signin|login|auth/i.test(url.slice(0, 160))) {
+      return { action: 'allow', overrideBrowserWindowOptions: { width: 520, height: 720, autoHideMenuBar: true, title: 'Entrar', webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false } } };
+    }
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
+});
+ipcMain.on('today:open-ext', (_e, url) => {
+  if (typeof url === 'string' && /^(https?|spotify|whatsapp|tg):/i.test(url)) shell.openExternal(url).catch(() => {});
+});
+ipcMain.handle('today:app-clear', async (_e, partition) => {
+  if (!/^persist:today-[\w-]+$/.test(String(partition || ''))) return false;
+  const ses = session.fromPartition(partition);
+  await ses.clearStorageData(); await ses.clearCache();
+  return true;
+});
+
+app.whenReady().then(() => { createWindow(); createTray(); });
   app.on('window-all-closed', () => app.quit());
 }

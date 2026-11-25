@@ -2,6 +2,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('todayDesktop', {
+  webview: true, // este programa sabe abrir apps dentro do Today
+  openExternal: (url) => ipcRenderer.send('today:open-ext', String(url || '')),
+  appClear: (partition) => ipcRenderer.invoke('today:app-clear', String(partition || '')),
   setTheme: (mode) => ipcRenderer.send('today:set-theme', mode === 'light' ? 'light' : 'dark'),
   retry: () => ipcRenderer.send('today:retry'),
   // botões da janela (minimizar, maximizar, fechar)
